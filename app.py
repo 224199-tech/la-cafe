@@ -6,12 +6,14 @@ import os
 import random
 from streamlit_mic_recorder import speech_to_text
 
+# --- 1. アプリの基本設定 ---
 st.set_page_config(
     page_title="La Café - English Roleplay", 
     page_icon="☕",
     layout="wide"
 )
 
+# --- 2. 画像の読み込みと変換 ---
 def get_image_base64(path):
     if os.path.exists(path):
         with open(path, "rb") as image_file:
@@ -35,6 +37,7 @@ staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_ha
 
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #2b1c11;"
 
+# --- 3. デザインCSS (PC・スマホ両対応/1画面に収める超圧縮レスポンシブ設計) ---
 st.markdown(f"""
     <style>
     .stApp {{
@@ -343,6 +346,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- 4. 初期状態の設定 ---
 if "step" not in st.session_state:
     st.session_state.step = 1 
     st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
@@ -366,6 +370,7 @@ if "step" not in st.session_state:
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
 
+# --- 5. サイドバー設定 ---
 st.sidebar.markdown("### ⚙️ Game Settings")
 speed_option = st.sidebar.select_slider("🔊 Voice Speed (話す速さ)", options=["Slow (ゆっくり)", "Normal (ふつう)", "Fast (はやく)"], value="Normal (ふつう)")
 speed_map = {"Slow (ゆっくり)": 0.85, "Normal (ふつう)": 1.0, "Fast (はやく)": 1.15}
@@ -385,27 +390,26 @@ selected_voice = voice_map[voice_gender]
 bgm_url = "https://archive.org/download/lofi-hiphop-cozy-vibes/Lo-Fi%20Hiphop%20-%20Cozy%20Vibes.mp3"
 st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
+# --- 6. 画面描画 ---
 st.markdown("<p class='game-title'>La Café English Roleplay</p>", unsafe_allow_html=True)
 
 visual_col, main_col = st.columns([0.9, 1.1])
 
 with visual_col:
-    # Render the character panel
     active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
     staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:80px; text-align:center;">👩‍🍳</div>'
 
+    # 💡 行頭スペースを徹底的に排除したキラキラ演出HTML (Streamlitコード化バグを完全に修正)
     star_shower_html = ""
     if st.session_state.emotion == "happy":
-        star_shower_html = """
-        <div class="star-shower">
-            <span class="star" style="left: 10vw;">🌟</span>
-            <span class="star" style="left: 25vw;">✨</span>
-            <span class="star" style="left: 45vw;">🌟</span>
-            <span class="star" style="left: 60vw;">💫</span>
-            <span class="star" style="left: 75vw;">🌟</span>
-            <span class="star" style="left: 90vw;">✨</span>
-        </div>
-        """
+        star_shower_html = '<div class="star-shower">' \
+                           '<span class="star" style="left:10vw;">🌟</span>' \
+                           '<span class="star" style="left:25vw;">✨</span>' \
+                           '<span class="star" style="left:45vw;">🌟</span>' \
+                           '<span class="star" style="left:60vw;">💫</span>' \
+                           '<span class="star" style="left:75vw;">🌟</span>' \
+                           '<span class="star" style="left:90vw;">✨</span>' \
+                           '</div>'
 
     drink_html = ""
     cookie_html = ""
@@ -431,7 +435,6 @@ with visual_col:
     </div>
     """, unsafe_allow_html=True)
 
-    # Render ultra-slim order status memo
     item_p = 3.50 if st.session_state.ordered_drink else 0.0
     cook_p = 1.50 if st.session_state.ordered_cookie else 0.0
     total_p = item_p + cook_p
@@ -458,7 +461,6 @@ with visual_col:
     """, unsafe_allow_html=True)
 
 with main_col:
-    # Audio player generator helper
     def play_audio(text, speed, voice_cfg):
         try:
             tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=False)
@@ -476,7 +478,6 @@ with main_col:
         play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
         st.session_state.speak_now = False
 
-    # Dialogue speech bubble
     window_html = f"""
     <div class="speech-window">
         <div>{st.session_state.current_npc_en}</div>
@@ -516,7 +517,6 @@ with main_col:
         return matched
 
     if st.session_state.step < 7:
-        # Micro-compact microphone panel
         st.markdown('<div class="mic-container">', unsafe_allow_html=True)
         st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:2px; font-size:0.8rem;'>🎤 声でしゃべって注文してみよう！ (英語)</p>", unsafe_allow_html=True)
         st.markdown("""
@@ -725,17 +725,16 @@ with main_col:
                 st.rerun()
 
     else:
-        # Final celebratory layout
         st.balloons()
         st.success("🎉 Order Completed!")
         
-        if st.button("Play Again (もういちど遊ぶ)", key='play_again', use_container_width=True):
+        if st.button("Play Again (もういちど遊ぶ)", key='play_again_btn', use_container_width=True):
             keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "play_again"]
             for key in keys_to_reset:
                 if key in st.session_state:
                     st.session_state[key] = None
             
-            # Reset default values strictly
+            # 初期値に戻す
             st.session_state.step = 1
             st.session_state.emotion = "normal"
             st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
