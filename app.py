@@ -6,14 +6,12 @@ import os
 import random
 from streamlit_mic_recorder import speech_to_text
 
-# --- 1. アプリの基本設定 ---
 st.set_page_config(
     page_title="La Café - English Roleplay", 
     page_icon="☕",
     layout="wide"
 )
 
-# --- 2. 画像の読み込みと変換 ---
 def get_image_base64(path):
     if os.path.exists(path):
         with open(path, "rb") as image_file:
@@ -37,7 +35,6 @@ staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_ha
 
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #2b1c11;"
 
-# --- 3. デザインCSS (PC・スマホ両対応/1画面に収める超圧縮レスポンシブ設計) ---
 st.markdown(f"""
     <style>
     .stApp {{
@@ -51,7 +48,6 @@ st.markdown(f"""
 
 st.markdown("""
     <style>
-    /* 全体と余白の超圧縮 */
     .block-container {
         background-color: rgba(0, 0, 0, 0.15); 
         padding: 0.5rem !important;
@@ -66,8 +62,6 @@ st.markdown("""
         margin-top: 2px;
         margin-bottom: 5px;
     }
-    
-    /* ビジュアルエリア(お姉さん)のレスポンシブ高さ調整 */
     .character-stage {
         display: flex;
         justify-content: center;
@@ -89,8 +83,6 @@ st.markdown("""
         bottom: 0px; 
         z-index: 5;
     }
-    
-    /* 注文が完成したときのプレゼント画像 */
     .drink-present {
         position: absolute;
         bottom: 10px; 
@@ -121,8 +113,6 @@ st.markdown("""
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-5px); }
     }
-    
-    /* セリフウィンドウのコンパクト化 */
     .speech-window {
         background: rgba(26, 15, 8, 0.95); 
         border: 2px solid #d7c49e;
@@ -143,8 +133,6 @@ st.markdown("""
         border-top: 1px dashed rgba(215, 196, 158, 0.3);
         padding-top: 4px;
     }
-    
-    /* 注文メモ（レシート）を極薄スマート化 */
     .receipt-memo {
         background-color: #fffef0;
         border-left: 2px dashed #ccc;
@@ -190,8 +178,6 @@ st.markdown("""
         justify-content: space-between;
         width: 100%;
     }
-    
-    /* キラキラ演出 */
     .star-shower {
         position: absolute;
         top: -10px;
@@ -214,8 +200,6 @@ st.markdown("""
         80% { opacity: 1; }
         100% { transform: translateY(350px) rotate(360deg); opacity: 0; }
     }
-    
-    /* マイクコンテナの超スリム化 */
     .mic-container {
         background: rgba(255, 255, 255, 0.08);
         border: 2px dashed rgba(215, 196, 158, 0.6);
@@ -247,8 +231,6 @@ st.markdown("""
         0%, 100% { transform: scaleY(0.4); }
         50% { transform: scaleY(1.0); }
     }
-    
-    /* 発音バッジのスリム化 */
     .pronunciation-badge-container {
         margin-top: 5px;
         margin-bottom: 5px;
@@ -265,7 +247,6 @@ st.markdown("""
     .badge-label { color: #d7c49e; font-size: 0.75rem; font-family: monospace; }
     .pron-perfect { color: #ffd700; font-weight: bold; font-size: 0.9rem; }
     .pron-good { color: #50c878; font-weight: bold; font-size: 0.9rem; }
-    
     .menu-board {
         background-color: #1e251c;
         border: 3px double #8b5a2b;
@@ -286,7 +267,6 @@ st.markdown("""
         padding-bottom: 2px;
     }
 
-    /* 📱 モバイル表示(幅768px以下)限定のダイナミック強制1画面対応 */
     @media (max-width: 768px) {
         .block-container {
             padding: 0.25rem !important;
@@ -363,7 +343,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. 初期状態の設定 ---
 if "step" not in st.session_state:
     st.session_state.step = 1 
     st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
@@ -387,7 +366,6 @@ if "step" not in st.session_state:
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
 
-# --- 5. サイドバー設定 ---
 st.sidebar.markdown("### ⚙️ Game Settings")
 speed_option = st.sidebar.select_slider("🔊 Voice Speed (話す速さ)", options=["Slow (ゆっくり)", "Normal (ふつう)", "Fast (はやく)"], value="Normal (ふつう)")
 speed_map = {"Slow (ゆっくり)": 0.85, "Normal (ふつう)": 1.0, "Fast (はやく)": 1.15}
@@ -407,14 +385,12 @@ selected_voice = voice_map[voice_gender]
 bgm_url = "https://archive.org/download/lofi-hiphop-cozy-vibes/Lo-Fi%20Hiphop%20-%20Cozy%20Vibes.mp3"
 st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
-# --- 6. 画面描画（レスポンシブ用にカラム順番をスマホ・PCで自動最適化） ---
 st.markdown("<p class='game-title'>La Café English Roleplay</p>", unsafe_allow_html=True)
 
-# 💡重要：スマホ時に「お姉さんステージ」を必ず一番上に持ってくるために、左カラム(visual_col)にお姉さんを配置
 visual_col, main_col = st.columns([0.9, 1.1])
 
 with visual_col:
-    # 1. お姉さんステージ
+    # Render the character panel
     active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
     staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:80px; text-align:center;">👩‍🍳</div>'
 
@@ -455,7 +431,7 @@ with visual_col:
     </div>
     """, unsafe_allow_html=True)
 
-    # 2. 超省スペース設計の横長レシート（注文メモ）
+    # Render ultra-slim order status memo
     item_p = 3.50 if st.session_state.ordered_drink else 0.0
     cook_p = 1.50 if st.session_state.ordered_cookie else 0.0
     total_p = item_p + cook_p
@@ -482,7 +458,7 @@ with visual_col:
     """, unsafe_allow_html=True)
 
 with main_col:
-    # 音声合成用関数
+    # Audio player generator helper
     def play_audio(text, speed, voice_cfg):
         try:
             tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=False)
@@ -500,7 +476,7 @@ with main_col:
         play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
         st.session_state.speak_now = False
 
-    # セリフウィンドウ
+    # Dialogue speech bubble
     window_html = f"""
     <div class="speech-window">
         <div>{st.session_state.current_npc_en}</div>
@@ -509,7 +485,6 @@ with main_col:
     """
     st.markdown(window_html, unsafe_allow_html=True)
 
-    # --- 音声入力とボタン操作 ---
     user_choice = None
     final_mic_input = None
 
@@ -541,7 +516,7 @@ with main_col:
         return matched
 
     if st.session_state.step < 7:
-        # コンパクトマイクコンテナ
+        # Micro-compact microphone panel
         st.markdown('<div class="mic-container">', unsafe_allow_html=True)
         st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:2px; font-size:0.8rem;'>🎤 声でしゃべって注文してみよう！ (英語)</p>", unsafe_allow_html=True)
         st.markdown("""
@@ -750,6 +725,7 @@ with main_col:
                 st.rerun()
 
     else:
+        # Final celebratory layout
         st.balloons()
         st.success("🎉 Order Completed!")
         
@@ -757,7 +733,12 @@ with main_col:
             keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "play_again"]
             for key in keys_to_reset:
                 if key in st.session_state:
-                    del st.session_state[key]
+                    st.session_state[key] = None
+            
+            # Reset default values strictly
+            st.session_state.step = 1
+            st.session_state.emotion = "normal"
+            st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
+            st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
+            st.session_state.speak_now = True
             st.rerun()
-```
-eof
