@@ -4,15 +4,17 @@ import io
 import base64
 import os
 import random
-# 音声録音用のライブラリをインポート
+# 💡 音声録音用のライブラリ
 from streamlit_mic_recorder import speech_to_text
 
+# --- 1. アプリの基本設定 ---
 st.set_page_config(
     page_title="La Café - English Roleplay", 
     page_icon="☕",
     layout="wide"
 )
 
+# --- 2. 画像の読み込みと変換 ---
 def get_image_base64(path):
     if os.path.exists(path):
         with open(path, "rb") as image_file:
@@ -36,19 +38,22 @@ staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_ha
 
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #2b1c11;"
 
-def clean_html(raw_html):
-    import re
-    cleaned = re.sub(r' +', ' ', raw_html)
-    return cleaned
-
-css_template = """
+# --- 3. デザインCSS (エラーの絶対起きない安全な設計) ---
+# 3-1. 背景だけは動的ベース64を含むので個別指定 (波カッコを2重エスケープ)
+st.markdown(f"""
     <style>
-    .stApp {
-        [BG_STYLE]
+    .stApp {{
+        {bg_style}
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-    }
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+# 3-2. 静的CSS (f-stringを使わないため、通常の波カッコ{}でPythonエラーを完全回避！)
+st.markdown("""
+    <style>
     .block-container {
         background-color: rgba(0, 0, 0, 0.15); 
         padding: 1rem !important;
@@ -236,88 +241,37 @@ css_template = """
     .pron-perfect { color: #ffd700; font-weight: bold; font-size: 1.1rem; }
     .pron-good { color: #50c878; font-weight: bold; font-size: 1.1rem; }
     @keyframes badgePop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-
-    @media (max-width: 768px) {
-        .block-container {
-            padding: 0.4rem !important;
-        }
-        .game-title {
-            font-size: 1.5rem;
-            margin-bottom: 5px;
-        }
-        div[data-testid="stHorizontalBlock"] {
-            display: flex !important;
-            flex-direction: column !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1) {
-            order: 2 !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2) {
-            order: 1 !important;
-        }
-        .character-stage {
-            height: 290px !important;
-            margin-bottom: 10px;
-        }
-        .npc-large-img {
-            max-height: 100%;
-            bottom: -20px;
-        }
-        .drink-present {
-            width: 90px !important;
-            height: 90px !important;
-            right: 15% !important;
-            bottom: 5px !important;
-        }
-        .cookie-present {
-            width: 75px !important;
-            height: 75px !important;
-            right: 35% !important;
-            bottom: 5px !important;
-        }
-        .speech-window {
-            padding: 12px 15px !important;
-            font-size: 1.05rem !important;
-            min-height: auto !important;
-            margin-bottom: 10px !important;
-        }
-        .speech-sub-jp {
-            font-size: 0.8rem !important;
-            margin-top: 5px;
-            padding-top: 4px;
-        }
-        .receipt-memo {
-            padding: 10px !important;
-            font-size: 0.8rem !important;
-            margin-top: 10px !important;
-        }
-        .receipt-header {
-            font-size: 0.9rem !important;
-            margin-bottom: 6px;
-        }
-        .pronunciation-badge-container {
-            padding: 8px !important;
-            gap: 8px !important;
-        }
-        .badge-icon-perfect, .badge-icon-good {
-            font-size: 24px !important;
-        }
-        .pron-perfect, .pron-good {
-            font-size: 0.9rem !important;
-        }
+    
+    .menu-board {
+        background-color: #1e251c;
+        border: 4px double #8b5a2b;
+        border-radius: 8px;
+        padding: 12px;
+        color: #f5f5f5;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        margin-top: 15px;
+    }
+    .menu-title {
+        color: #ffd700;
+        text-align: center;
+        font-weight: bold;
+        border-bottom: 2px dashed #ffd700;
+        margin-bottom: 8px;
+        padding-bottom: 5px;
     }
     </style>
-"""
+""", unsafe_allow_html=True)
 
-rendered_css = css_template.replace("[BG_STYLE]", bg_style)
-st.markdown(clean_html(rendered_css), unsafe_allow_html=True)
-
+# --- 4. 初期状態の設定 ---
 if "step" not in st.session_state:
-    st.session_state.step = 1
+    st.session_state.step = 1 # 1:Drink, 2:Hot/Iced, 3:Size, 4:CookieEvent, 5:Place, 6:Payment, 7:Complete
     st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
     st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
     st.session_state.emotion = "normal" 
     st.session_state.speak_now = True
+    st.session_state.play_again = False
 
     # 注文データ
     st.session_state.ordered_drink = None 
@@ -329,16 +283,15 @@ if "step" not in st.session_state:
 
     # ゲームイベント用
     st.session_state.has_cookie_event = False 
-    st.session_state.sold_out_item = None
-    st.session_state.block_next = False
+    st.session_state.sold_out_item = None 
+    st.session_state.block_next = False 
 
-    # 発音スコア表示の初期化
+    # 発音スコア用
     st.session_state.pronunciation_status = None 
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
 
-    st.session_state.prevent_overlap = {"step": 0, "text": ""}
-
+# --- 5. サイドバー設定 ---
 st.sidebar.markdown("### ⚙️ Game Settings")
 speed_option = st.sidebar.select_slider("🔊 Voice Speed (話す速さ)", options=["Slow (ゆっくり)", "Normal (ふつう)", "Fast (はやく)"], value="Normal (ふつう)")
 speed_map = {"Slow (ゆっくり)": 0.85, "Normal (ふつう)": 1.0, "Fast (はやく)": 1.15}
@@ -358,7 +311,7 @@ selected_voice = voice_map[voice_gender]
 bgm_url = "https://archive.org/download/lofi-hiphop-cozy-vibes/Lo-Fi%20Hiphop%20-%20Cozy%20Vibes.mp3"
 st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
-st.sidebar.markdown(clean_html("""
+st.sidebar.markdown("""
 <div class="menu-board">
     <div class="menu-title">☕️ CAFE MENU ☕️</div>
     💡 <b>DRINKS</b><br>
@@ -381,8 +334,10 @@ st.sidebar.markdown(clean_html("""
     💡 <b>PAYMENT</b><br>
     ・Cash (現金) / Card (カード)
 </div>
-"""), unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
+
+# --- 6. 画面描画 ---
 st.markdown("<p class='game-title'>La Café English Roleplay</p>", unsafe_allow_html=True)
 
 main_col, visual_col = st.columns([1.1, 0.9])
@@ -393,7 +348,7 @@ with visual_col:
 
     star_shower_html = ""
     if st.session_state.emotion == "happy":
-        star_shower_html = clean_html("""
+        star_shower_html = """
         <div class="star-shower">
             <span class="star" style="left: 10vw;">🌟</span>
             <span class="star" style="left: 25vw;">✨</span>
@@ -402,11 +357,11 @@ with visual_col:
             <span class="star" style="left: 75vw;">🌟</span>
             <span class="star" style="left: 90vw;">✨</span>
         </div>
-        """)
+        """
 
     drink_html = ""
     cookie_html = ""
-    if st.session_state.step == 7:
+    if st.session_state.step == 7: 
         if st.session_state.ordered_drink:
             drink_type = st.session_state.ordered_drink
             local_drink_path = item_images.get(drink_type, "")
@@ -419,15 +374,17 @@ with visual_col:
                 cookie_base64 = get_image_base64(cookie_path)
                 cookie_html = f'<img class="cookie-present" src="data:image/png;base64,{cookie_base64}">'
 
-    st.markdown(clean_html(f"""
+    # ステージ描画
+    st.markdown(f"""
     <div class="character-stage">
         {staff_html}
         {drink_html}
         {cookie_html}
         {star_shower_html}
     </div>
-    """), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
+    # リアルタイム注文メモ
     item_p = 3.50 if st.session_state.ordered_drink else 0.0
     cook_p = 1.50 if st.session_state.ordered_cookie else 0.0
     total_p = item_p + cook_p
@@ -437,7 +394,7 @@ with visual_col:
     cookie_disp = "Chocolate Cookie" if st.session_state.ordered_cookie else "---"
     place_disp = "For Here" if st.session_state.ordered_place == "here" else ("To Go" if st.session_state.ordered_place == "go" else "---")
     payment_disp = st.session_state.ordered_payment.capitalize() if st.session_state.ordered_payment else "---"
-    st.markdown(clean_html(f"""
+    st.markdown(f"""
     <div class="receipt-memo">
         <div class="receipt-header">📋 ORDER MEMO (レシート)</div>
         <div class="receipt-item"><span>🥤 Item:</span> <span>{drink_disp}</span></div>
@@ -448,7 +405,7 @@ with visual_col:
         <div class="receipt-item"><span>💳 Pay:</span> <span>{payment_disp}</span></div>
         <div class="receipt-total"><span>💰 TOTAL:</span> <span>${total_p:.2f}</span></div>
     </div>
-    """), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 with main_col:
     def play_audio(text, speed, voice_cfg):
@@ -468,14 +425,15 @@ with main_col:
         play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
         st.session_state.speak_now = False
 
-    window_html = clean_html(f"""
+    window_html = f"""
     <div class="speech-window">
         <div>{st.session_state.current_npc_en}</div>
         <div class="speech-sub-jp">{st.session_state.current_npc_jp}</div>
     </div>
-    """)
+    """
     st.markdown(window_html, unsafe_allow_html=True)
 
+    # --- 7. 音声入力とボタン操作 ---
     user_choice = None
     final_mic_input = None
 
@@ -495,7 +453,7 @@ with main_col:
                 for mistake in mistakes:
                     if mistake in text:
                         matched = k
-                        exact_hit = False
+                        exact_hit = False 
                         break
                 if matched: break
         
@@ -507,10 +465,9 @@ with main_col:
         return matched
 
     if st.session_state.step < 7:
-        
         st.markdown('<div class="mic-container">', unsafe_allow_html=True)
         st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:5px;'>🎤 声でしゃべって注文してみよう！ (英語)</p>", unsafe_allow_html=True)
-        st.markdown(clean_html("""
+        st.markdown("""
             <div class="equalizer-wave">
                 <div class="wave-bar"></div>
                 <div class="wave-bar"></div>
@@ -518,21 +475,21 @@ with main_col:
                 <div class="wave-bar"></div>
                 <div class="wave-bar"></div>
             </div>
-        """), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
         
         mic_input = speech_to_text(
             start_prompt="🔴 録音スタート (おしてしゃべる)",
             stop_prompt="⏹️ 録音おわり",
             language='en-US',
             use_container_width=True,
-            key=f'speech_{st.session_state.step}'
+            key=f'speech_{st.session_state.step}' 
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
         if st.session_state.pronunciation_status:
             icon = "🌟 Perfect Pronunciation!" if st.session_state.pronunciation_status == "perfect" else "👍 Good Try! (伝わったよ！)"
             i_class = "pron-perfect" if st.session_state.pronunciation_status == "perfect" else "pron-good"
-            st.markdown(clean_html(f"""
+            st.markdown(f"""
                 <div class="pronunciation-badge-container">
                     <div class="badge-icon-{"perfect" if st.session_state.pronunciation_status == "perfect" else "good"}">{"🏆" if st.session_state.pronunciation_status == "perfect" else "🎖️"}</div>
                     <div>
@@ -540,7 +497,7 @@ with main_col:
                         <div class="{i_class}">{icon}</div>
                     </div>
                 </div>
-            """), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
         st.markdown("<p style='color:#fff; font-weight:bold; margin-bottom:5px;'>👇 または、ボタンか文字入力でもすすめられるよ！</p>", unsafe_allow_html=True)
         
@@ -614,6 +571,9 @@ with main_col:
         elif user_typed:
             raw_input_text = user_typed
 
+        if "prevent_overlap" not in st.session_state:
+            st.session_state.prevent_overlap = {"step": 0, "text": ""}
+
         if raw_input_text and (st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != raw_input_text):
             
             matched_key = fuzzy_match(raw_input_text, keywords, fuzzy_rules)
@@ -623,8 +583,8 @@ with main_col:
 
             if matched_key:
                 import time
-                time.sleep(1.2)
-                st.session_state.pronunciation_status = None
+                time.sleep(1.2) 
+                st.session_state.pronunciation_status = None 
                 
                 if st.session_state.step == 1:
                     if matched_key == st.session_state.sold_out_item:
@@ -689,18 +649,19 @@ with main_col:
                     st.session_state.current_npc_en = f"Thank you so much! Here is your drink{c_msg}. Enjoy your time!"
                     st.session_state.current_npc_jp = f"ありがとうございました！{p_msg_jp}でのお会計ですね。ご注文のドリンク{c_msg_jp}です。ごゆっくりどうぞ！"
                     st.session_state.emotion = "happy"
-                    st.session_state.step = 7
+                    st.session_state.step = 7 
+                    st.session_state.play_again = True 
 
                 st.session_state.speak_now = True
                 st.rerun()
 
             else:
                 import time
-                time.sleep(1.2)
-                st.session_state.pronunciation_status = None
+                time.sleep(1.2) 
+                st.session_state.pronunciation_status = None 
                 
-                s_txt = f"you didn't mention an item"
-                s_txt_jp = f"メニューから選んでみてくださいね。"
+                s_txt = "you didn't mention an item"
+                s_txt_jp = "メニューから選んでみてくださいね。"
                 if keywords:
                     s_txt = f"did you say {' or '.join([f"'{k}'" for k in keywords])}?"
                     s_txt_jp = f"{'か、'.join([f'{k}（{k}）' for k in keywords])}のどちらでしょうか？"
@@ -715,35 +676,9 @@ with main_col:
         st.balloons()
         st.success("🎉 Order Completed!")
         
-        if st.button("Play Again (もういちど遊ぶ)", key='btn_reset_secure'):
-            st.session_state.step = 1
-            st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
-            st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
-            st.session_state.emotion = "normal"
-            st.session_state.speak_now = True
-            
-            st.session_state.ordered_drink = None 
-            st.session_state.drink_temp = None  
-            st.session_state.ordered_size = None  
-            st.session_state.ordered_cookie = False 
-            st.session_state.ordered_place = None  
-            st.session_state.ordered_payment = None 
-
-            st.session_state.has_cookie_event = False 
-            st.session_state.sold_out_item = None
-            st.session_state.block_next = False
-
-            st.session_state.pronunciation_status = None 
-            st.session_state.p_heard_text = ""
-            st.session_state.p_matched_keyword = ""
-            st.session_state.prevent_overlap = {"step": 0, "text": ""}
-            
+        if st.button("Play Again (もういちど遊ぶ)", key='play_again'):
+            keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "play_again"]
+            for key in keys_to_reset:
+                if key in st.session_state:
+                    del st.session_state[key]
             st.rerun()
-```
-eof
-
-上記のプログラムを、GitHubの `app.py` のファイルの中身へ**すべてそっくり上書き**して保存（Commit changes）してください。
-
-このコードブロックの外側には余分な文章を一切含めておりません。そのため、この中身を丸ごとコピーして貼り付けるだけで、`SyntaxError` は解決し、安全な動作環境がお子様のスマートフォンやタブレットへ一瞬で配信されます。
-
-上書き保存が完了したら、数秒後にスマートフォンのブラウザでリロードしてみてください。今度こそ、快適でなめらかに動くスマートフォン対応の英会話カフェをお楽しみいただけます！
