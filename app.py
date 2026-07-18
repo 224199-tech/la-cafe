@@ -4,7 +4,6 @@ import io
 import base64
 import os
 import random
-# 💡 音声録音用のライブラリ
 from streamlit_mic_recorder import speech_to_text
 
 # --- 1. アプリの基本設定 ---
@@ -38,7 +37,7 @@ staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_ha
 
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #2b1c11;"
 
-# --- 3. デザインCSS (エラーの絶対起きない安全な設計) ---
+# --- 3. デザインCSS (PC・スマホ両対応/1画面に収める超圧縮レスポンシブ設計) ---
 st.markdown(f"""
     <style>
     .stApp {{
@@ -50,61 +49,68 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# 3-2. 静的CSS (f-stringを使わないため、通常の波カッコ{}でPythonエラーを完全回避！)
 st.markdown("""
     <style>
+    /* 全体と余白の超圧縮 */
     .block-container {
         background-color: rgba(0, 0, 0, 0.15); 
-        padding: 1rem !important;
+        padding: 0.5rem !important;
     }
     .game-title {
         color: #ffffff;
         text-align: center;
         font-family: 'Helvetica Neue', Arial, sans-serif;
-        font-size: 2.2rem;
+        font-size: 1.6rem;
         font-weight: bold;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        margin-bottom: 10px;
+        margin-top: 2px;
+        margin-bottom: 5px;
     }
+    
+    /* ビジュアルエリア(お姉さん)のレスポンシブ高さ調整 */
     .character-stage {
         display: flex;
         justify-content: center;
         align-items: flex-end;
-        height: 440px; 
-        margin-bottom: 15px;
+        height: 240px; 
+        margin-bottom: 8px;
         position: relative;
         overflow: hidden; 
+        border-radius: 10px;
+        background: rgba(0,0,0,0.2);
     }
     .npc-large-img {
-        max-height: 110%; 
+        max-height: 100%; 
         width: auto;
         object-fit: contain;
-        filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.5));
+        filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.5));
         animation: subtleFloat 3s infinite ease-in-out;
         position: relative;
-        bottom: -40px; 
+        bottom: 0px; 
         z-index: 5;
     }
+    
+    /* 注文が完成したときのプレゼント画像 */
     .drink-present {
         position: absolute;
         bottom: 10px; 
-        right: 20%; 
-        width: 150px; 
-        height: 150px;
+        right: 15%; 
+        width: 80px; 
+        height: 80px;
         object-fit: contain;
         z-index: 10; 
-        filter: drop-shadow(0px 12px 18px rgba(0,0,0,0.6));
+        filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6));
         animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
     .cookie-present {
         position: absolute;
         bottom: 10px; 
-        right: 32%; 
-        width: 120px; 
-        height: 120px;
+        right: 25%; 
+        width: 60px; 
+        height: 60px;
         object-fit: contain;
         z-index: 11; 
-        filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.6));
+        filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6));
         animation: popIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
     @keyframes popIn {
@@ -113,66 +119,82 @@ st.markdown("""
     }
     @keyframes subtleFloat {
         0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-8px); }
+        50% { transform: translateY(-5px); }
     }
+    
+    /* セリフウィンドウのコンパクト化 */
     .speech-window {
-        background: rgba(26, 15, 8, 0.92); 
-        border: 3px solid #d7c49e;
-        border-radius: 12px;
-        padding: 18px 25px;
+        background: rgba(26, 15, 8, 0.95); 
+        border: 2px solid #d7c49e;
+        border-radius: 10px;
+        padding: 10px 15px;
         color: #ffffff;
-        font-size: 1.4rem;
+        font-size: 1.1rem;
         font-weight: bold;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        margin-bottom: 15px;
-        min-height: 110px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        margin-bottom: 8px;
+        min-height: 60px;
     }
     .speech-sub-jp {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         color: #bfaaa0;
         font-weight: normal;
-        margin-top: 8px;
+        margin-top: 4px;
         border-top: 1px dashed rgba(215, 196, 158, 0.3);
-        padding-top: 6px;
+        padding-top: 4px;
     }
+    
+    /* 注文メモ（レシート）を極薄スマート化 */
     .receipt-memo {
         background-color: #fffef0;
-        border-left: 3px dashed #ccc;
-        border-right: 3px dashed #ccc;
+        border-left: 2px dashed #ccc;
+        border-right: 2px dashed #ccc;
         border-top: 1px solid #ccc;
         border-bottom: 1px solid #ccc;
-        padding: 15px;
+        padding: 6px 10px;
         color: #333333;
         font-family: 'Courier New', Courier, monospace;
-        font-size: 1rem;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        margin-top: 15px;
-        line-height: 1.4;
+        font-size: 0.8rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        margin-top: 5px;
+        margin-bottom: 8px;
+        line-height: 1.2;
     }
     .receipt-header {
         text-align: center;
         font-weight: bold;
-        font-size: 1.1rem;
+        font-size: 0.85rem;
         border-bottom: 1px dashed #333;
-        margin-bottom: 10px;
-        padding-bottom: 5px;
+        margin-bottom: 4px;
+        padding-bottom: 2px;
+    }
+    .receipt-item-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 5px;
     }
     .receipt-item {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 5px;
+        font-size: 0.75rem;
+        background: rgba(0,0,0,0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
     }
     .receipt-total {
         border-top: 1px dashed #333;
-        margin-top: 10px;
-        padding-top: 5px;
+        margin-top: 4px;
+        padding-top: 2px;
         font-weight: bold;
+        font-size: 0.85rem;
         display: flex;
         justify-content: space-between;
+        width: 100%;
     }
+    
+    /* キラキラ演出 */
     .star-shower {
         position: absolute;
-        top: -20px;
+        top: -10px;
         left: 0;
         width: 100%;
         height: 100%;
@@ -182,37 +204,39 @@ st.markdown("""
     }
     .star {
         position: absolute;
-        top: -20px;
-        font-size: 30px;
-        animation: starFall 1.5s linear forwards;
+        top: -10px;
+        font-size: 20px;
+        animation: starFall 1.2s linear forwards;
     }
     @keyframes starFall {
-        0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+        0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
         10% { transform: translateY(0px) rotate(30deg); opacity: 1; }
         80% { opacity: 1; }
-        100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        100% { transform: translateY(350px) rotate(360deg); opacity: 0; }
     }
+    
+    /* マイクコンテナの超スリム化 */
     .mic-container {
         background: rgba(255, 255, 255, 0.08);
         border: 2px dashed rgba(215, 196, 158, 0.6);
-        padding: 15px;
-        border-radius: 12px;
+        padding: 8px;
+        border-radius: 10px;
         text-align: center;
-        margin-bottom: 15px;
+        margin-bottom: 8px;
     }
     .equalizer-wave {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 30px;
-        gap: 5px;
-        margin: 10px 0;
+        height: 20px;
+        gap: 4px;
+        margin: 5px 0;
     }
     .wave-bar {
-        width: 6px;
+        width: 4px;
         height: 100%;
         background-color: #ffd700;
-        border-radius: 3px;
+        border-radius: 2px;
         animation: waveAnim 1.2s ease-in-out infinite;
     }
     .wave-bar:nth-child(2) { animation-delay: 0.1s; background-color: #ffb700; }
@@ -223,148 +247,117 @@ st.markdown("""
         0%, 100% { transform: scaleY(0.4); }
         50% { transform: scaleY(1.0); }
     }
+    
+    /* 発音バッジのスリム化 */
     .pronunciation-badge-container {
-        margin-top: 10px;
+        margin-top: 5px;
+        margin-bottom: 5px;
         background: rgba(43, 28, 17, 0.95);
-        border: 2px solid #8b5a2b;
-        border-radius: 10px;
-        padding: 12px;
-        text-align: left;
+        border: 1.5px solid #8b5a2b;
+        border-radius: 8px;
+        padding: 8px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
     }
-    .badge-icon-perfect { font-size: 35px; color: #ffd700; animation: badgePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .badge-icon-good { font-size: 35px; color: #50c878; animation: badgePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .badge-label { color: #d7c49e; font-size: 0.85rem; font-family: monospace; }
-    .pron-perfect { color: #ffd700; font-weight: bold; font-size: 1.1rem; }
-    .pron-good { color: #50c878; font-weight: bold; font-size: 1.1rem; }
-    @keyframes badgePop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    .badge-icon-perfect { font-size: 24px; color: #ffd700; }
+    .badge-icon-good { font-size: 24px; color: #50c878; }
+    .badge-label { color: #d7c49e; font-size: 0.75rem; font-family: monospace; }
+    .pron-perfect { color: #ffd700; font-weight: bold; font-size: 0.9rem; }
+    .pron-good { color: #50c878; font-weight: bold; font-size: 0.9rem; }
     
     .menu-board {
         background-color: #1e251c;
-        border: 4px double #8b5a2b;
-        border-radius: 8px;
-        padding: 12px;
+        border: 3px double #8b5a2b;
+        border-radius: 6px;
+        padding: 8px;
         color: #f5f5f5;
         font-family: 'Courier New', Courier, monospace;
-        font-size: 0.85rem;
+        font-size: 0.75rem;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        margin-top: 15px;
+        margin-top: 10px;
     }
     .menu-title {
         color: #ffd700;
         text-align: center;
         font-weight: bold;
-        border-bottom: 2px dashed #ffd700;
-        margin-bottom: 8px;
-        padding-bottom: 5px;
+        border-bottom: 1.5px dashed #ffd700;
+        margin-bottom: 4px;
+        padding-bottom: 2px;
     }
 
-    /* 📱 スマホ画面向けの高度なレスポンシブデザイン（スクロール撲滅・最適フィット） */
+    /* 📱 モバイル表示(幅768px以下)限定のダイナミック強制1画面対応 */
     @media (max-width: 768px) {
-        /* [超重要] コラムの並び順を完全逆転！
-           店員さん（visual_col）を画面の一番上に、会話・マイク（main_col）を下にします */
-        div[data-testid="stHorizontalBlock"] {
-            display: flex !important;
-            flex-direction: column-reverse !important;
-            gap: 5px !important;
+        .block-container {
+            padding: 0.25rem !important;
         }
-        
-        /* 店員ステージをスマホサイズにギュッと縮小（スクロールを防止） */
         .character-stage {
-            height: 180px !important;
-            margin-bottom: 5px !important;
+            height: 150px !important; 
+            margin-bottom: 4px !important;
         }
         .npc-large-img {
             max-height: 100% !important;
-            bottom: -5px !important;
+            bottom: 0px !important;
         }
         .drink-present {
-            width: 75px !important;
-            height: 75px !important;
-            right: 25% !important;
+            width: 50px !important;
+            height: 50px !important;
             bottom: 5px !important;
+            right: 10% !important;
         }
         .cookie-present {
-            width: 60px !important;
-            height: 60px !important;
-            right: 37% !important;
+            width: 40px !important;
+            height: 40px !important;
             bottom: 5px !important;
+            right: 25% !important;
         }
-
-        /* 吹き出しの余白と文字サイズをコンパクトにして省スペース化 */
         .speech-window {
-            padding: 10px 14px !important;
-            font-size: 1.05rem !important;
-            min-height: 60px !important;
-            margin-bottom: 8px !important;
+            font-size: 0.95rem !important;
+            padding: 6px 10px !important;
+            min-height: 45px !important;
+            margin-bottom: 4px !important;
         }
         .speech-sub-jp {
-            font-size: 0.75rem !important;
-            margin-top: 4px !important;
-            padding-top: 4px !important;
+            font-size: 0.7rem !important;
+            margin-top: 2px !important;
+            padding-top: 2px !important;
         }
-
-        /* レシートをスマホに合わせて超コンパクトなミニメモ風に */
         .receipt-memo {
-            padding: 8px 10px !important;
-            font-size: 0.75rem !important;
-            margin-top: 5px !important;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1) !important;
+            padding: 4px 8px !important;
+            font-size: 0.65rem !important;
+            margin-top: 2px !important;
+            margin-bottom: 4px !important;
         }
         .receipt-header {
-            font-size: 0.8rem !important;
-            margin-bottom: 4px !important;
-            padding-bottom: 3px !important;
-        }
-        .receipt-item {
+            font-size: 0.7rem !important;
             margin-bottom: 2px !important;
         }
-        .receipt-total {
-            margin-top: 4px !important;
-            padding-top: 3px !important;
+        .receipt-item {
+            font-size: 0.6rem !important;
+            padding: 1px 4px !important;
         }
-
-        /* マイクエリアもスリム化 */
+        .receipt-total {
+            font-size: 0.7rem !important;
+            margin-top: 2px !important;
+            padding-top: 1px !important;
+        }
         .mic-container {
-            padding: 8px !important;
-            margin-bottom: 8px !important;
-            border-radius: 8px !important;
+            padding: 4px !important;
+            margin-bottom: 4px !important;
         }
         .mic-container p {
-            font-size: 0.8rem !important;
-            margin-bottom: 3px !important;
+            font-size: 0.75rem !important;
+            margin-bottom: 2px !important;
         }
         .equalizer-wave {
-            height: 15px !important;
-            margin: 3px 0 !important;
-            gap: 3px !important;
+            height: 12px !important;
+            margin: 2px 0 !important;
         }
-        .wave-bar {
-            width: 4px !important;
-        }
-
-        /* ゲームタイトルのサイズを小さく */
-        .game-title {
-            font-size: 1.5rem !important;
-            margin-bottom: 5px !important;
-        }
-
-        /* 発音バッジを薄型にする */
-        .pronunciation-badge-container {
-            padding: 8px !important;
-            gap: 8px !important;
-            border-radius: 8px !important;
-        }
-        .pronunciation-badge-container div:first-child {
-            font-size: 24px !important;
-        }
-        .badge-label {
-            font-size: 0.7rem !important;
-        }
-        .pron-perfect, .pron-good {
-            font-size: 0.85rem !important;
+        .stButton button {
+            padding: 4px 6px !important;
+            font-size: 0.75rem !important;
+            height: auto !important;
+            min-height: 32px !important;
         }
     }
     </style>
@@ -372,14 +365,13 @@ st.markdown("""
 
 # --- 4. 初期状態の設定 ---
 if "step" not in st.session_state:
-    st.session_state.step = 1 # 1:Drink, 2:Hot/Iced, 3:Size, 4:CookieEvent, 5:Place, 6:Payment, 7:Complete
+    st.session_state.step = 1 
     st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
     st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
     st.session_state.emotion = "normal" 
     st.session_state.speak_now = True
     st.session_state.play_again = False
 
-    # 注文データ
     st.session_state.ordered_drink = None 
     st.session_state.drink_temp = None  
     st.session_state.ordered_size = None  
@@ -387,12 +379,10 @@ if "step" not in st.session_state:
     st.session_state.ordered_place = None  
     st.session_state.ordered_payment = None 
 
-    # ゲームイベント用
     st.session_state.has_cookie_event = False 
     st.session_state.sold_out_item = None 
     st.session_state.block_next = False 
 
-    # 発音スコア用
     st.session_state.pronunciation_status = None 
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
@@ -417,40 +407,16 @@ selected_voice = voice_map[voice_gender]
 bgm_url = "https://archive.org/download/lofi-hiphop-cozy-vibes/Lo-Fi%20Hiphop%20-%20Cozy%20Vibes.mp3"
 st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
-st.sidebar.markdown("""
-<div class="menu-board">
-    <div class="menu-title">☕️ CAFE MENU ☕️</div>
-    💡 <b>DRINKS</b><br>
-    ・Coffee ($3.50)<br>
-    ・Latte ($3.50)<br>
-    ・Tea ($3.50)<br>
-    <br>
-    🍪 <b>TODAY'S SWEETS</b><br>
-    ・Chocolate Chip Cookie ($1.50)<br>
-    <br>
-    💡 <b>SIZE</b><br>
-    ・Small / Medium / Large<br>
-    <br>
-    💡 <b>TEMP</b><br>
-    ・Hot (温かい) / Iced (冷たい)<br>
-    <br>
-    💡 <b>PLACE</b><br>
-    ・For here (店内) / To go (持ち帰り)<br>
-    <br>
-    💡 <b>PAYMENT</b><br>
-    ・Cash (現金) / Card (カード)
-</div>
-""", unsafe_allow_html=True)
-
-
-# --- 6. 画面描画 ---
+# --- 6. 画面描画（レスポンシブ用にカラム順番をスマホ・PCで自動最適化） ---
 st.markdown("<p class='game-title'>La Café English Roleplay</p>", unsafe_allow_html=True)
 
-main_col, visual_col = st.columns([1.1, 0.9])
+# 💡重要：スマホ時に「お姉さんステージ」を必ず一番上に持ってくるために、左カラム(visual_col)にお姉さんを配置
+visual_col, main_col = st.columns([0.9, 1.1])
 
 with visual_col:
+    # 1. お姉さんステージ
     active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
-    staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:120px; text-align:center;">👩‍🍳</div>'
+    staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:80px; text-align:center;">👩‍🍳</div>'
 
     star_shower_html = ""
     if st.session_state.emotion == "happy":
@@ -480,7 +446,6 @@ with visual_col:
                 cookie_base64 = get_image_base64(cookie_path)
                 cookie_html = f'<img class="cookie-present" src="data:image/png;base64,{cookie_base64}">'
 
-    # ステージ描画
     st.markdown(f"""
     <div class="character-stage">
         {staff_html}
@@ -490,30 +455,34 @@ with visual_col:
     </div>
     """, unsafe_allow_html=True)
 
-    # リアルタイム注文メモ
+    # 2. 超省スペース設計の横長レシート（注文メモ）
     item_p = 3.50 if st.session_state.ordered_drink else 0.0
     cook_p = 1.50 if st.session_state.ordered_cookie else 0.0
     total_p = item_p + cook_p
     drink_disp = st.session_state.ordered_drink.capitalize() if st.session_state.ordered_drink else "---"
     temp_disp = st.session_state.drink_temp.capitalize() if st.session_state.drink_temp else "---"
     size_disp = st.session_state.ordered_size.capitalize() if st.session_state.ordered_size else "---"
-    cookie_disp = "Chocolate Cookie" if st.session_state.ordered_cookie else "---"
-    place_disp = "For Here" if st.session_state.ordered_place == "here" else ("To Go" if st.session_state.ordered_place == "go" else "---")
+    cookie_disp = "Cookie" if st.session_state.ordered_cookie else "---"
+    place_disp = "Here" if st.session_state.ordered_place == "here" else ("Go" if st.session_state.ordered_place == "go" else "---")
     payment_disp = st.session_state.ordered_payment.capitalize() if st.session_state.ordered_payment else "---"
+    
     st.markdown(f"""
     <div class="receipt-memo">
-        <div class="receipt-header">📋 ORDER MEMO (レシート)</div>
-        <div class="receipt-item"><span>🥤 Item:</span> <span>{drink_disp}</span></div>
-        <div class="receipt-item"><span>🔥 Temp:</span> <span>{temp_disp}</span></div>
-        <div class="receipt-item"><span>📏 Size:</span> <span>{size_disp}</span></div>
-        <div class="receipt-item"><span>🍪 Sweet:</span> <span>{cookie_disp}</span></div>
-        <div class="receipt-item"><span>🏠 Place:</span> <span>{place_disp}</span></div>
-        <div class="receipt-item"><span>💳 Pay:</span> <span>{payment_disp}</span></div>
+        <div class="receipt-header">📋 ORDER STATUS (お買い物メモ)</div>
+        <div class="receipt-item-container">
+            <div class="receipt-item">🥤 {drink_disp}</div>
+            <div class="receipt-item">🔥 {temp_disp}</div>
+            <div class="receipt-item">📏 {size_disp}</div>
+            <div class="receipt-item">🍪 {cookie_disp}</div>
+            <div class="receipt-item">🏠 {place_disp}</div>
+            <div class="receipt-item">💳 {payment_disp}</div>
+        </div>
         <div class="receipt-total"><span>💰 TOTAL:</span> <span>${total_p:.2f}</span></div>
     </div>
     """, unsafe_allow_html=True)
 
 with main_col:
+    # 音声合成用関数
     def play_audio(text, speed, voice_cfg):
         try:
             tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=False)
@@ -531,6 +500,7 @@ with main_col:
         play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
         st.session_state.speak_now = False
 
+    # セリフウィンドウ
     window_html = f"""
     <div class="speech-window">
         <div>{st.session_state.current_npc_en}</div>
@@ -539,7 +509,7 @@ with main_col:
     """
     st.markdown(window_html, unsafe_allow_html=True)
 
-    # --- 7. 音声入力とボタン操作 ---
+    # --- 音声入力とボタン操作 ---
     user_choice = None
     final_mic_input = None
 
@@ -571,8 +541,9 @@ with main_col:
         return matched
 
     if st.session_state.step < 7:
+        # コンパクトマイクコンテナ
         st.markdown('<div class="mic-container">', unsafe_allow_html=True)
-        st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:5px;'>🎤 声でしゃべって注文してみよう！ (英語)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:2px; font-size:0.8rem;'>🎤 声でしゃべって注文してみよう！ (英語)</p>", unsafe_allow_html=True)
         st.markdown("""
             <div class="equalizer-wave">
                 <div class="wave-bar"></div>
@@ -599,13 +570,13 @@ with main_col:
                 <div class="pronunciation-badge-container">
                     <div class="badge-icon-{"perfect" if st.session_state.pronunciation_status == "perfect" else "good"}">{"🏆" if st.session_state.pronunciation_status == "perfect" else "🎖️"}</div>
                     <div>
-                        <div class="badge-label">🗣️ あなたの声: {st.session_state.p_heard_text} ➡️ お店の人の解釈: {st.session_state.p_matched_keyword}</div>
+                        <div class="badge-label">🗣️ あなたの声: {st.session_state.p_heard_text} ➡️ 解釈: {st.session_state.p_matched_keyword}</div>
                         <div class="{i_class}">{icon}</div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
 
-        st.markdown("<p style='color:#fff; font-weight:bold; margin-bottom:5px;'>👇 または、ボタンか文字入力でもすすめられるよ！</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#fff; font-weight:bold; margin-bottom:5px; font-size:0.8rem;'>👇 または、ボタンか文字入力でもすすめられるよ！</p>", unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
         keywords = []
@@ -615,16 +586,16 @@ with main_col:
             keywords = ["coffee", "latte", "tea"]
             with col1:
                 is_so = st.session_state.sold_out_item == "coffee"
-                lbl = "☕️ Coffee (Sold Out)" if is_so else "☕️ I'd like a coffee, please."
-                if st.button(lbl, disabled=is_so, key='b_c'): user_choice = "Coffee, please."
+                lbl = "☕️ Coffee"
+                if st.button(lbl, disabled=is_so, key='b_c', use_container_width=True): user_choice = "Coffee, please."
             with col2:
                 is_so = st.session_state.sold_out_item == "latte"
-                lbl = "🥛 Latte (Sold Out)" if is_so else "🥛 A latte, please!"
-                if st.button(lbl, disabled=is_so, key='b_l'): user_choice = "Latte, please."
+                lbl = "🥛 Latte"
+                if st.button(lbl, disabled=is_so, key='b_l', use_container_width=True): user_choice = "Latte, please."
             with col3:
                 is_so = st.session_state.sold_out_item == "tea"
-                lbl = "🍵 Tea (Sold Out)" if is_so else "🍵 Tea, please."
-                if st.button(lbl, disabled=is_so, key='b_t'): user_choice = "Tea, please."
+                lbl = "🍵 Tea"
+                if st.button(lbl, disabled=is_so, key='b_t', use_container_width=True): user_choice = "Tea, please."
 
         elif st.session_state.step == 2:
             keywords = ["hot", "iced"]
@@ -633,41 +604,41 @@ with main_col:
                 "iced": ["ice", "eyes", "nice", "asked"]
             }
             with col1:
-                if st.button("🔥 Hot, please!", key='b_h'): user_choice = "Hot, please."
+                if st.button("🔥 Hot", key='b_h', use_container_width=True): user_choice = "Hot, please."
             with col2:
-                if st.button("❄️ Iced, please!", key='b_i'): user_choice = "Iced, please."
+                if st.button("❄️ Iced", key='b_i', use_container_width=True): user_choice = "Iced, please."
 
         elif st.session_state.step == 3:
             keywords = ["small", "medium", "large"]
             with col1:
-                if st.button("🟢 Small, please.", key='b_s'): user_choice = "Small, please."
+                if st.button("🟢 Small", key='b_s', use_container_width=True): user_choice = "Small, please."
             with col2:
-                if st.button("🟡 Medium, please.", key='b_m'): user_choice = "Medium, please."
+                if st.button("🟡 Medium", key='b_m', use_container_width=True): user_choice = "Medium, please."
             with col3:
-                if st.button("🔴 Large, please.", key='b_lg'): user_choice = "Large, please."
+                if st.button("🔴 Large", key='b_lg', use_container_width=True): user_choice = "Large, please."
 
         elif st.session_state.step == 4:
             keywords = ["yes", "no"]
             with col1:
-                if st.button("🍪 Yes, please!", key='b_y'): user_choice = "Yes, please!"
+                if st.button("🍪 Yes", key='b_y', use_container_width=True): user_choice = "Yes, please!"
             with col2:
-                if st.button("❌ No, thank you.", key='b_n'): user_choice = "No, thank you."
+                if st.button("❌ No", key='b_n', use_container_width=True): user_choice = "No, thank you."
                 
         elif st.session_state.step == 5:
             keywords = ["here", "go"]
             with col1:
-                if st.button("🏠 For here, please.", key='b_fh'): user_choice = "For here, please."
+                if st.button("🏠 For here", key='b_fh', use_container_width=True): user_choice = "For here, please."
             with col2:
-                if st.button("🛍️ To go, please.", key='b_tg'): user_choice = "To go, please."
+                if st.button("🛍️ To go", key='b_tg', use_container_width=True): user_choice = "To go, please."
                 
         elif st.session_state.step == 6:
             keywords = ["cash", "card"]
             with col1:
-                if st.button("💵 Cash, please.", key='b_ca'): user_choice = "Cash, please."
+                if st.button("💵 Cash", key='b_ca', use_container_width=True): user_choice = "Cash, please."
             with col2:
-                if st.button("💳 By card, please.", key='b_cd'): user_choice = "By card, please."
+                if st.button("💳 Card", key='b_cd', use_container_width=True): user_choice = "By card, please."
 
-        user_typed = st.chat_input("Or type your answer in English here...")
+        user_typed = st.chat_input("Or type here...")
         
         raw_input_text = None
         if mic_input:
@@ -782,32 +753,11 @@ with main_col:
         st.balloons()
         st.success("🎉 Order Completed!")
         
-        # 不要な del (エラーを引き起こすキー) は避け、st.session_state への上書きにより安全に初期化
-        if st.button("Play Again (もういちど遊ぶ)", key='play_again_btn'):
-            st.session_state.step = 1
-            st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
-            st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
-            st.session_state.emotion = "normal"
-            st.session_state.speak_now = True
-            st.session_state.play_again = False
-
-            # 注文データを安全にクリア
-            st.session_state.ordered_drink = None 
-            st.session_state.drink_temp = None  
-            st.session_state.ordered_size = None  
-            st.session_state.ordered_cookie = False 
-            st.session_state.ordered_place = None  
-            st.session_state.ordered_payment = None 
-
-            # ゲームイベント用をクリア
-            st.session_state.has_cookie_event = False 
-            st.session_state.sold_out_item = None 
-            st.session_state.block_next = False 
-
-            # 発音スコア用をクリア
-            st.session_state.pronunciation_status = None 
-            st.session_state.p_heard_text = ""
-            st.session_state.p_matched_keyword = ""
-            
-            # 再読み込み
+        if st.button("Play Again (もういちど遊ぶ)", key='play_again', use_container_width=True):
+            keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "play_again"]
+            for key in keys_to_reset:
+                if key in st.session_state:
+                    del st.session_state[key]
             st.rerun()
+```
+eof
