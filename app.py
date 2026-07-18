@@ -39,7 +39,6 @@ staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_ha
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #2b1c11;"
 
 # --- 3. デザインCSS (エラーの絶対起きない安全な設計) ---
-# 3-1. 背景だけは動的ベース64を含むので個別指定 (波カッコを2重エスケープ)
 st.markdown(f"""
     <style>
     .stApp {{
@@ -71,7 +70,7 @@ st.markdown("""
         display: flex;
         justify-content: center;
         align-items: flex-end;
-        height: 480px; 
+        height: 440px; 
         margin-bottom: 15px;
         position: relative;
         overflow: hidden; 
@@ -260,6 +259,113 @@ st.markdown("""
         border-bottom: 2px dashed #ffd700;
         margin-bottom: 8px;
         padding-bottom: 5px;
+    }
+
+    /* 📱 スマホ画面向けの高度なレスポンシブデザイン（スクロール撲滅・最適フィット） */
+    @media (max-width: 768px) {
+        /* [超重要] コラムの並び順を完全逆転！
+           店員さん（visual_col）を画面の一番上に、会話・マイク（main_col）を下にします */
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: column-reverse !important;
+            gap: 5px !important;
+        }
+        
+        /* 店員ステージをスマホサイズにギュッと縮小（スクロールを防止） */
+        .character-stage {
+            height: 180px !important;
+            margin-bottom: 5px !important;
+        }
+        .npc-large-img {
+            max-height: 100% !important;
+            bottom: -5px !important;
+        }
+        .drink-present {
+            width: 75px !important;
+            height: 75px !important;
+            right: 25% !important;
+            bottom: 5px !important;
+        }
+        .cookie-present {
+            width: 60px !important;
+            height: 60px !important;
+            right: 37% !important;
+            bottom: 5px !important;
+        }
+
+        /* 吹き出しの余白と文字サイズをコンパクトにして省スペース化 */
+        .speech-window {
+            padding: 10px 14px !important;
+            font-size: 1.05rem !important;
+            min-height: 60px !important;
+            margin-bottom: 8px !important;
+        }
+        .speech-sub-jp {
+            font-size: 0.75rem !important;
+            margin-top: 4px !important;
+            padding-top: 4px !important;
+        }
+
+        /* レシートをスマホに合わせて超コンパクトなミニメモ風に */
+        .receipt-memo {
+            padding: 8px 10px !important;
+            font-size: 0.75rem !important;
+            margin-top: 5px !important;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1) !important;
+        }
+        .receipt-header {
+            font-size: 0.8rem !important;
+            margin-bottom: 4px !important;
+            padding-bottom: 3px !important;
+        }
+        .receipt-item {
+            margin-bottom: 2px !important;
+        }
+        .receipt-total {
+            margin-top: 4px !important;
+            padding-top: 3px !important;
+        }
+
+        /* マイクエリアもスリム化 */
+        .mic-container {
+            padding: 8px !important;
+            margin-bottom: 8px !important;
+            border-radius: 8px !important;
+        }
+        .mic-container p {
+            font-size: 0.8rem !important;
+            margin-bottom: 3px !important;
+        }
+        .equalizer-wave {
+            height: 15px !important;
+            margin: 3px 0 !important;
+            gap: 3px !important;
+        }
+        .wave-bar {
+            width: 4px !important;
+        }
+
+        /* ゲームタイトルのサイズを小さく */
+        .game-title {
+            font-size: 1.5rem !important;
+            margin-bottom: 5px !important;
+        }
+
+        /* 発音バッジを薄型にする */
+        .pronunciation-badge-container {
+            padding: 8px !important;
+            gap: 8px !important;
+            border-radius: 8px !important;
+        }
+        .pronunciation-badge-container div:first-child {
+            font-size: 24px !important;
+        }
+        .badge-label {
+            font-size: 0.7rem !important;
+        }
+        .pron-perfect, .pron-good {
+            font-size: 0.85rem !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -676,9 +782,32 @@ with main_col:
         st.balloons()
         st.success("🎉 Order Completed!")
         
-        if st.button("Play Again (もういちど遊ぶ)", key='play_again'):
-            keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "play_again"]
-            for key in keys_to_reset:
-                if key in st.session_state:
-                    del st.session_state[key]
+        # 不要な del (エラーを引き起こすキー) は避け、st.session_state への上書きにより安全に初期化
+        if st.button("Play Again (もういちど遊ぶ)", key='play_again_btn'):
+            st.session_state.step = 1
+            st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
+            st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
+            st.session_state.emotion = "normal"
+            st.session_state.speak_now = True
+            st.session_state.play_again = False
+
+            # 注文データを安全にクリア
+            st.session_state.ordered_drink = None 
+            st.session_state.drink_temp = None  
+            st.session_state.ordered_size = None  
+            st.session_state.ordered_cookie = False 
+            st.session_state.ordered_place = None  
+            st.session_state.ordered_payment = None 
+
+            # ゲームイベント用をクリア
+            st.session_state.has_cookie_event = False 
+            st.session_state.sold_out_item = None 
+            st.session_state.block_next = False 
+
+            # 発音スコア用をクリア
+            st.session_state.pronunciation_status = None 
+            st.session_state.p_heard_text = ""
+            st.session_state.p_matched_keyword = ""
+            
+            # 再読み込み
             st.rerun()
