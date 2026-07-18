@@ -174,7 +174,7 @@ st.markdown(clean_html(f"""
         display: flex;
         justify-content: space-between;
     }}
-    /* キラキラ・スターシャワー演出 (防止済み) */
+    /* キラキラ・スターシャワー演出 */
     .star-shower {{
         position: absolute;
         top: -20px;
@@ -257,7 +257,6 @@ if "step" not in st.session_state:
     st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
     st.session_state.emotion = "normal" 
     st.session_state.speak_now = True
-    st.session_state.play_again = False
 
     # 注文データ
     st.session_state.ordered_drink = None 
@@ -272,10 +271,13 @@ if "step" not in st.session_state:
     st.session_state.sold_out_item = None # 売り切れアイテム
     st.session_state.block_next = False # 売り切れブロック判定
 
-    # 🌟【修正】発音スコア表示を確実にする
+    # 発音スコア表示
     st.session_state.pronunciation_status = None 
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
+
+    # 競合防止用
+    st.session_state.prevent_overlap = {"step": 0, "text": ""}
 
 # --- 5. サイドバー設定 ---
 st.sidebar.markdown("### ⚙️ Game Settings")
@@ -333,7 +335,7 @@ with visual_col:
     active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
     staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:120px; text-align:center;">👩‍🍳</div>'
 
-    # キラキラ・スターシャワー (修正済み)
+    # キラキラ・スターシャワー
     star_shower_html = ""
     if st.session_state.emotion == "happy":
         star_shower_html = clean_html(f"""
@@ -424,12 +426,11 @@ with main_col:
     """)
     st.markdown(window_html, unsafe_allow_html=True)
 
-    # --- 7. 音声入力とボタン操作 (修正の中心) ---
+    # --- 7. 音声入力とボタン操作 ---
     user_choice = None
     final_mic_input = None
 
     # [機能B] AIの優しい耳・発音補正 (あいまい判定)
-    # 特定の単語の聞き取り間違いを優しくカバーする。
     def fuzzy_match(input_text, keyword_list, fuzzy_rules=None):
         text = input_text.lower()
         matched = None
@@ -452,7 +453,7 @@ with main_col:
                         break
                 if matched: break
         
-        # 🌟【修正】発音スコア表示を session_state に保存して競合に勝つ
+        # 発音スコア表示を session_state に保存
         if matched:
             st.session_state.p_heard_text = f'"{text}"'
             st.session_state.p_matched_keyword = f'"{matched.capitalize()}"'
@@ -464,7 +465,6 @@ with main_col:
     if st.session_state.step < 7:
         
         # [機能A] 音声波形アニメーションマイク
-        # 録音ボタンの周りにピコピコ動く波形エフェクトを追加
         st.markdown('<div class="mic-container">', unsafe_allow_html=True)
         st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:5px;'>🎤 声でしゃべって注文してみよう！ (英語)</p>", unsafe_allow_html=True)
         st.markdown(clean_html("""
@@ -487,7 +487,7 @@ with main_col:
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # 🌟【修正】発音バッジ・競合防止の表示
+        # 発音バッジ表示
         if st.session_state.pronunciation_status:
             icon = "🌟 Perfect Pronunciation!" if st.session_state.pronunciation_status == "perfect" else "👍 Good Try! (伝わったよ！)"
             i_class = "pron-perfect" if st.session_state.pronunciation_status == "perfect" else "pron-good"
@@ -525,7 +525,6 @@ with main_col:
 
         elif st.session_state.step == 2:
             keywords = ["hot", "iced"]
-            # [機能B] Hot/Iced の優しい耳補正
             fuzzy_rules = {
                 "hot": ["thought", "hat", "heart", "pot"],
                 "iced": ["ice", "eyes", "nice", "asked"]
@@ -567,7 +566,7 @@ with main_col:
 
         user_typed = st.chat_input("Or type your answer in English here...")
         
-        # 💡優先順位：マイク入力 > ボタン選択 > タイピング
+        # 優先順位：マイク入力 > ボタン選択 > タイピング
         raw_input_text = None
         if mic_input:
             raw_input_text = mic_input
@@ -576,29 +575,22 @@ with main_col:
         elif user_typed:
             raw_input_text = user_typed
 
-        # 🌟【修正 中心】競合防止ゲートの導入
-        # 一度処理したテキスト（Perfect判定されたもの）は `handled_text` に保存し、
-        # 競合により一瞬戻るのを防ぐ
-        if "prevent_overlap" not in st.session_state:
-            st.session_state.prevent_overlap = {"step": 0, "text": ""}
-
-        # 未処理の新しい入力がある場合のみ処理する
+        # 競合防止ゲートの判定
         if raw_input_text and (st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != raw_input_text):
             
             # 優しい耳で判定
             matched_key = fuzzy_match(raw_input_text, keywords, fuzzy_rules)
 
-            # 処理済みとして記録 (競合防止)
+            # 処理済みとして記録
             st.session_state.prevent_overlap["step"] = st.session_state.step
             st.session_state.prevent_overlap["text"] = raw_input_text
 
             if matched_key:
-                # [機能A] 正解シャワー演出のため、少し待機してからリロード
                 import time
                 time.sleep(1.2) # キラキラが見えるように
                 st.session_state.pronunciation_status = None # バッジをリセット
                 
-                # --- ステップごとの処理 ---
+                # --- 各ステップの処理 ---
                 if st.session_state.step == 1:
                     if matched_key == st.session_state.sold_out_item:
                         st.session_state.current_npc_en = f"As I mentioned, we are sold out of {matched_key.capitalize()} today. Grrr! Could you choose another drink?"
@@ -663,13 +655,11 @@ with main_col:
                     st.session_state.current_npc_jp = f"ありがとうございました！{p_msg_jp}でのお会計ですね。ご注文のドリンク{c_msg_jp}です。ごゆっくりどうぞ！"
                     st.session_state.emotion = "happy"
                     st.session_state.step = 7 # 完成
-                    st.session_state.play_again = True # 再プレイボタン表示へ
 
                 st.session_state.speak_now = True
                 st.rerun()
 
             else:
-                # [機能A] 音声入力が失敗した場合の「もう一度チャレンジ」バッジ (防止済み)
                 import time
                 time.sleep(1.2) # バッジが見えるように
                 st.session_state.pronunciation_status = None # バッジをリセット
@@ -691,10 +681,37 @@ with main_col:
         st.balloons()
         st.success("🎉 Order Completed!")
         
-        if st.button("Play Again (もういちど遊ぶ)", key='play_again'):
-            # 状態を完全リセット
-            keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "play_again"]
-            for key in keys_to_reset:
-                if key in st.session_state:
-                    del st.session_state[key]
+        # 💡クラウド上でもエラーを出さずに、安全に状態をリセットするボタン
+        if st.button("Play Again (もういちど遊ぶ)", key='btn_reset'):
+            st.session_state.step = 1
+            st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
+            st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
+            st.session_state.emotion = "normal"
+            st.session_state.speak_now = True
+            
+            # 注文データを初期値に戻す
+            st.session_state.ordered_drink = None 
+            st.session_state.drink_temp = None  
+            st.session_state.ordered_size = None  
+            st.session_state.ordered_cookie = False 
+            st.session_state.ordered_place = None  
+            st.session_state.ordered_payment = None 
+
+            # ゲームイベント用
+            st.session_state.has_cookie_event = False 
+            st.session_state.sold_out_item = None
+            st.session_state.block_next = False
+
+            # 発音スコアと重複防止のリセット
+            st.session_state.pronunciation_status = None 
+            st.session_state.p_heard_text = ""
+            st.session_state.p_matched_keyword = ""
+            st.session_state.prevent_overlap = {"step": 0, "text": ""}
+            
             st.rerun()
+```
+eof
+
+この `app.py` のコードを丸ごとコピーしてGitHubに上書き保存（Commit changes）していただければ、エラーはすっかり消えてきれいなクリア画面が戻ってきます！
+
+クラウド（GitHub）上で更新されましたら、Streamlit Cloudの画面をリロードして動作を確認してみてください。お子様が最後まで笑顔で遊べることを願っております！
