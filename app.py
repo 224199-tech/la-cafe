@@ -41,11 +41,10 @@ bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg
 # --- お掃除フィルター (防止ブロック) ---
 def clean_html(raw_html):
     import re
-    # 連続する半角スペースを1つに縮める (コードブロック誤認防止)
     cleaned = re.sub(r' +', ' ', raw_html)
     return cleaned
 
-# --- 3. デザインCSS ---
+# --- 3. デザインCSS (レスポンシブスマホ最適化) ---
 st.markdown(clean_html(f"""
     <style>
     .stApp {{
@@ -247,6 +246,90 @@ st.markdown(clean_html(f"""
     .pron-perfect {{ color: #ffd700; font-weight: bold; font-size: 1.1rem; }}
     .pron-good {{ color: #50c878; font-weight: bold; font-size: 1.1rem; }}
     @keyframes badgePop {{ 0% {{ transform: scale(0); }} 100% {{ transform: scale(1); }} }}
+
+    /* ========================================================= */
+    /* 📱 スマートフォン用の表示調整 (レスポンシブデザイン) */
+    /* ========================================================= */
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 0.4rem !important;
+        }
+        .game-title {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        /* ⭐️重要: スマホ画面ではビジュアル側(キャラクターやレシート)を上に持ってくる */
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1) {
+            order: 2 !important; /* テキストやボタン、マイクは下側へ */
+        }
+        div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2) {
+            order: 1 !important; /* キャラクターとレシートは上側へ */
+        }
+
+        /* ステージの高さをスマホサイズに縮小 */
+        .character-stage {
+            height: 290px !important;
+            margin-bottom: 10px;
+        }
+        .npc-large-img {
+            max-height: 100%;
+            bottom: -20px;
+        }
+        
+        /* スマホ向け完成品（ドリンク＆クッキー）サイズと位置調整 */
+        .drink-present {
+            width: 90px !important;
+            height: 90px !important;
+            right: 15% !important;
+            bottom: 5px !important;
+        }
+        .cookie-present {
+            width: 75px !important;
+            height: 75px !important;
+            right: 35% !important;
+            bottom: 5px !important;
+        }
+
+        /* セリフ吹き出しをスマホ向けにコンパクト化 */
+        .speech-window {
+            padding: 12px 15px !important;
+            font-size: 1.05rem !important;
+            min-height: auto !important;
+            margin-bottom: 10px !important;
+        }
+        .speech-sub-jp {
+            font-size: 0.8rem !important;
+            margin-top: 5px;
+            padding-top: 4px;
+        }
+
+        /* レシートもコンパクトにしてはみ出しを防ぐ */
+        .receipt-memo {
+            padding: 10px !important;
+            font-size: 0.8rem !important;
+            margin-top: 10px !important;
+        }
+        .receipt-header {
+            font-size: 0.9rem !important;
+            margin-bottom: 6px;
+        }
+
+        /* 発音スコアコンテナ */
+        .pronunciation-badge-container {
+            padding: 8px !important;
+            gap: 8px !important;
+        }
+        .badge-icon-perfect, .badge-icon-good {
+            font-size: 24px !important;
+        }
+        .pron-perfect, .pron-good {
+            font-size: 0.9rem !important;
+        }
+    }
     </style>
 """), unsafe_allow_html=True)
 
@@ -271,12 +354,12 @@ if "step" not in st.session_state:
     st.session_state.sold_out_item = None # 売り切れアイテム
     st.session_state.block_next = False # 売り切れブロック判定
 
-    # 発音スコア表示
+    # 発音スコア表示の初期化
     st.session_state.pronunciation_status = None 
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
 
-    # 競合防止用
+    # 競合防止用ゲート
     st.session_state.prevent_overlap = {"step": 0, "text": ""}
 
 # --- 5. サイドバー設定 ---
@@ -681,15 +764,15 @@ with main_col:
         st.balloons()
         st.success("🎉 Order Completed!")
         
-        # 💡クラウド上でもエラーを出さずに、安全に状態をリセットするボタン
-        if st.button("Play Again (もういちど遊ぶ)", key='btn_reset'):
+        # 💡クラウド上でもエラーを出さずに、安全に状態をリセットするボタン (Widget衝突を徹底回避)
+        if st.button("Play Again (もういちど遊ぶ)", key='btn_reset_secure'):
             st.session_state.step = 1
             st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
             st.session_state.current_npc_jp = "いらっしゃいませ！何にいたしますか？"
             st.session_state.emotion = "normal"
             st.session_state.speak_now = True
             
-            # 注文データを初期値に戻す
+            # 注文データの安全な初期化（上書きで対応し、キーエラーを防止）
             st.session_state.ordered_drink = None 
             st.session_state.drink_temp = None  
             st.session_state.ordered_size = None  
@@ -697,12 +780,12 @@ with main_col:
             st.session_state.ordered_place = None  
             st.session_state.ordered_payment = None 
 
-            # ゲームイベント用
+            # ゲームイベント用データの初期化
             st.session_state.has_cookie_event = False 
             st.session_state.sold_out_item = None
             st.session_state.block_next = False
 
-            # 発音スコアと重複防止のリセット
+            # 発音スコアと重複防止の安全な初期化
             st.session_state.pronunciation_status = None 
             st.session_state.p_heard_text = ""
             st.session_state.p_matched_keyword = ""
