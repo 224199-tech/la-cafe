@@ -709,9 +709,3 @@ with main_col:
             st.session_state.prevent_overlap = {"step": 0, "text": ""}
             
             st.rerun()
-```
-eof
-
-この `app.py` のコードを丸ごとコピーしてGitHubに上書き保存（Commit changes）していただければ、エラーはすっかり消えてきれいなクリア画面が戻ってきます！
-
-クラウド（GitHub）上で更新されましたら、Streamlit Cloudの画面をリロードして動作を確認してみてください。お子様が最後まで笑顔で遊べることを願っております！
