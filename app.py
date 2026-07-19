@@ -65,7 +65,7 @@ FOOD_PRICES = {
     "sandwich": 8.50
 }
 
-# --- 4. デザインCSS (大幅に文字サイズと視認性を強化) ---
+# --- 4. デザインCSS (文字拡大・スマホ横画面2列レイアウト強制) ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
@@ -81,11 +81,11 @@ st.markdown("""<style>
 @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes subtleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
-/* セリフウィンドウ (英語・日本語とも文字を大幅に拡大) */
+/* セリフウィンドウ */
 .speech-window { background: rgba(26, 15, 8, 0.98); border: 3px solid #d7c49e; border-radius: 12px; padding: 12px 18px; color: #ffffff; font-size: 1.4rem; font-weight: bold; box-shadow: 0 6px 20px rgba(0,0,0,0.6); margin-bottom: 8px; min-height: 70px; line-height: 1.5; }
 .speech-sub-jp { font-size: 1.0rem; color: #dcd0ca; font-weight: normal; margin-top: 6px; border-top: 1px dashed rgba(215, 196, 158, 0.5); padding-top: 6px; }
 
-/* リアルなデカレシート (インフォメーションを大きく見やすく) */
+/* リアルなデカレシート */
 .receipt-memo { background-color: #fffef0; border-left: 3px dashed #ccc; border-right: 3px dashed #ccc; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 10px 14px; color: #222222; font-family: 'Courier New', monospace; font-size: 0.95rem; box-shadow: 0 6px 12px rgba(0,0,0,0.2); margin-top: 4px; margin-bottom: 8px; line-height: 1.4; }
 .receipt-header { text-align: center; font-weight: bold; font-size: 1.1rem; border-bottom: 1.5px dashed #333; margin-bottom: 6px; padding-bottom: 4px; color: #111; }
 .receipt-item-container { display: flex; flex-direction: column; gap: 4px; }
@@ -108,7 +108,7 @@ st.markdown("""<style>
 .pron-perfect { color: #ffd700; font-weight: bold; font-size: 1.1rem; }
 .pron-good { color: #50c878; font-weight: bold; font-size: 1.1rem; }
 
-/* 全ボタンを巨大化して押しやすく */
+/* 全ボタンデザイン */
 .stButton button { padding: 8px 16px !important; font-size: 1.15rem !important; font-weight: bold !important; height: auto !important; min-height: 48px !important; border-radius: 10px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important; }
 
 /* お店スタンプカード */
@@ -180,7 +180,6 @@ st.markdown("""<style>
     height: 100%;
     z-index: 10;
 }
-/* Streamlitボタンを完全に透明化して画像の上に引き伸ばす */
 .transparent-btn-overlay div.stButton,
 .transparent-btn-overlay div.stButton > button {
     width: 100% !important;
@@ -201,7 +200,7 @@ st.markdown("""<style>
     box-shadow: none !important;
 }
 
-/* お札が足りない時のグレーアウト表現 */
+/* お札未対応・グレーアウト */
 .cash-disabled-container {
     position: relative;
     width: 100%;
@@ -212,10 +211,117 @@ st.markdown("""<style>
     pointer-events: none;
     box-shadow: none;
 }
-
-/* お札未アップロード時の代替ボタンデザイン */
 .cash-btn-box { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2.5px solid #4caf50; border-radius: 10px; padding: 8px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.15); font-weight: bold; color: #1b5e20; font-size: 1.0rem; }
-@media (max-width: 768px) { .character-stage { height: 180px !important; } }
+
+/* ==========================================
+   🚨 スマホ横画面 (Landscape) 最適化レスポンシブ
+   ========================================== */
+@media (orientation: landscape) and (max-width: 930px) {
+    /* 1. 縦積み化を強制解除し、PCと同じ左右50%幅を保持 */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+    [data-testid="stColumn"] {
+        width: 50% !important;
+        min-width: 50% !important;
+        flex: 1 !important;
+    }
+    
+    /* 2. 縦のスペースを節約するために各パーツの高さを縮小 */
+    .game-title {
+        font-size: 1.4rem !important;
+        margin: 2px 0 5px 0 !important;
+    }
+    .character-stage {
+        height: 120px !important;
+    }
+    .npc-large-img {
+        max-height: 100% !important;
+    }
+    .drink-present {
+        width: 45px !important;
+        height: 45px !important;
+    }
+    .food-present {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    /* 3. セリフテキストとレシートのスリム化 */
+    .speech-window {
+        font-size: 1.05rem !important;
+        padding: 6px 12px !important;
+        min-height: 40px !important;
+        margin-bottom: 4px !important;
+    }
+    .speech-sub-jp {
+        font-size: 0.8rem !important;
+        margin-top: 3px !important;
+        padding-top: 3px !important;
+    }
+    .receipt-memo {
+        font-size: 0.8rem !important;
+        padding: 5px 8px !important;
+        margin-bottom: 4px !important;
+    }
+    .receipt-header {
+        font-size: 0.85rem !important;
+        margin-bottom: 3px !important;
+    }
+    .receipt-item {
+        font-size: 0.75rem !important;
+        padding: 1px 4px !important;
+    }
+    .receipt-total {
+        font-size: 0.95rem !important;
+        margin-top: 3px !important;
+    }
+    
+    /* 4. 操作ボタン・スタンプ・マイク調整 */
+    .stButton button {
+        font-size: 0.9rem !important;
+        min-height: 38px !important;
+        padding: 4px 8px !important;
+    }
+    .mic-container {
+        padding: 5px !important;
+        margin-bottom: 4px !important;
+    }
+    .mic-container p {
+        font-size: 0.8rem !important;
+        margin-bottom: 2px !important;
+    }
+    .equalizer-wave {
+        height: 12px !important;
+    }
+    .stamp-card-box {
+        padding: 4px !important;
+        margin-top: 4px !important;
+    }
+    .stamp-title {
+        font-size: 0.8rem !important;
+        margin-bottom: 3px !important;
+    }
+    .stamp-slot {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 0.85rem !important;
+    }
+    .menu-display-card {
+        padding: 6px !important;
+        margin-bottom: 6px !important;
+    }
+    .menu-display-img {
+        max-height: 55px !important;
+    }
+    .menu-display-label {
+        font-size: 0.8rem !important;
+    }
+}
 </style>""", unsafe_allow_html=True)
 
 # --- 5. 永続的なグローバル状態（スタンプ・お名前）の設定 ---
@@ -299,7 +405,7 @@ with visual_col:
 
     st.markdown(f"<div class='character-stage'>{staff_html}{drink_html}{food_html}{star_shower_html}</div>", unsafe_allow_html=True)
 
-    # 2. リアルタイム内訳・金額付きレシート表示 (文字拡大)
+    # 2. リアルタイム内訳・金額付きレシート表示
     drink_disp = f"{st.session_state.ordered_drink.capitalize()}" if st.session_state.ordered_drink else "---"
     temp_disp = f"{st.session_state.drink_temp.capitalize()}" if st.session_state.drink_temp else "---"
     size_disp = f"{st.session_state.ordered_size.capitalize()}" if st.session_state.ordered_size else "---"
@@ -531,7 +637,7 @@ with main_col:
                 if st.button("🛍️ To go, please.", key='btn_go', use_container_width=True): user_choice = "To go, please."
                 
         elif st.session_state.step == 6:
-            # --- お札画像ボタンお会計システム (お札のみ直感タップ決済) ---
+            # --- お札画像ボタンお会計システム ---
             keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
             fuzzy_rules = {"5": ["five dollars"], "10": ["ten dollars"], "20": ["twenty dollars"]}
             
@@ -682,7 +788,7 @@ with main_col:
                     st.session_state.change_amount = st.session_state.paid_amount - total_p
                     
                     if st.session_state.ordered_payment_type.startswith("cash"):
-                        if st.session_state.change_amount > 0.01: # 浮動小数点の誤差回避
+                        if st.session_state.change_amount > 0.01: 
                             st.session_state.current_npc_en = f"Thank you so much! Here is your change, ${st.session_state.change_amount:.2f}. And here is your drink{food_msg}. Enjoy!"
                             st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文のドリンク{food_msg_jp}もどうぞ。ごゆっくり！"
                         else:
@@ -690,7 +796,7 @@ with main_col:
                             st.session_state.current_npc_jp = f"ちょうどのお支払いでありがとうございます！ご注文のドリンク{food_msg_jp}です。ごゆっくり！"
                     else:
                         st.session_state.current_npc_en = f"Thank you so much! Payment approved. Here is your drink{food_msg}. Enjoy your time!"
-                        st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文 of ドリンク{food_msg_jp}になります。ごゆっくり！"
+                        st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文のドリンク{food_msg_jp}になります。ごゆっくり！"
                         
                     st.session_state.emotion = "happy"
                     st.session_state.step = 7 
