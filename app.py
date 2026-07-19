@@ -43,148 +43,151 @@ staff_normal_base = get_image_base64(staff_normal_path)
 staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_happy_path) else staff_normal_base
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #1e120c;"
 
-# --- 3. スマホ完全調和・重なり絶対回避の超スリムCSSデザイン ---
+# --- 3. デザインCSS設定（PC・タブレットに最適化された大画面で見やすいデザイン） ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
-/* Streamlitデフォルトの不要な余白を完全にゼロ化して、狭いスマホ画面の上下を確保 */
+/* 画面全体の余白調整 */
 .block-container { 
-    max-width: 100% !important;
-    padding: 10px !important; 
-    background-color: rgba(0, 0, 0, 0.4); 
+    max-width: 1200px !important;
+    padding: 20px !important; 
+    background-color: rgba(0, 0, 0, 0.5); 
+    border-radius: 16px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
-/* ゲーム全体のタイトル */
+/* ゲーム全体のタイトル（大きく華やかに） */
 .game-title { 
-    color: #ffffff; 
+    color: #ffd700; 
     text-align: center; 
-    font-family: 'Comic Sans MS', sans-serif; 
-    font-size: 1.4rem; 
+    font-family: 'Georgia', serif; 
+    font-size: 2.2rem; 
     font-weight: bold; 
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.9); 
-    margin: 0px 0px 5px 0px; 
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.9); 
+    margin: 10px 0px 20px 0px; 
 }
 
-/* 左右分割用コンテナの枠線を美しく設定 */
+/* 左右分割用のコンテナ（視認性を確保する不透明な高級ウッドブラウン） */
 .column-container {
-    background: rgba(30, 18, 12, 0.95) !important; /* 透けない焦げ茶にして視認性を確保 */
-    border: 3px solid #8b5a2b;
-    border-radius: 12px;
-    padding: 10px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-    margin-bottom: 8px;
+    background: rgba(30, 18, 12, 0.95);
+    border: 4px solid #8b5a2b;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    margin-bottom: 15px;
 }
 
-/* キャラクター（お姉さん）のステージ部分。高さをつぶしてスマホでも絶対に上下が重ならないように */
+/* キャラクター（お姉さん）のステージ部分（高さを十分に確保し美しく表示） */
 .character-stage { 
     display: flex; 
     justify-content: center; 
     align-items: flex-end; 
-    height: 140px; 
-    margin-bottom: 5px; 
+    height: 300px; 
+    margin-bottom: 15px; 
     position: relative; 
     overflow: hidden; 
-    border-radius: 8px; 
-    background: rgba(0,0,0,0.3); 
+    border-radius: 12px; 
+    background: rgba(0,0,0,0.4); 
     border: 2px solid #5a381e;
 }
 .npc-large-img { 
-    max-height: 100%; 
+    max-height: 95%; 
     width: auto; 
     object-fit: contain; 
-    filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.6)); 
+    filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.7)); 
     position: relative; 
     bottom: 0px; 
     z-index: 5; 
 }
 
-/* 手渡しアイテム（ドリンク・ケーキ等）の配置アニメーション */
+/* 手渡しアイテムの配置 */
 .drink-present { 
     position: absolute; 
-    bottom: 5px; 
-    right: 15%; 
-    width: 45px; 
-    height: 45px; 
+    bottom: 20px; 
+    right: 20%; 
+    width: 75px; 
+    height: 75px; 
     object-fit: contain; 
     z-index: 10; 
-    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); 
+    filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6)); 
 }
 .food-present { 
     position: absolute; 
-    bottom: 5px; 
-    right: 35%; 
-    width: 40px; 
-    height: 40px; 
+    bottom: 20px; 
+    right: 40%; 
+    width: 70px; 
+    height: 70px; 
     object-fit: contain; 
     z-index: 11; 
-    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); 
+    filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6)); 
 }
 
-/* セリフ吹き出しエリア（背景をしっかりダークにして文字を100%見やすく） */
+/* セリフ吹き出しエリア（文字を極限まで見やすく、大きく調整） */
 .speech-window { 
-    background: #110905; 
-    border: 2.5px solid #d7c49e; 
-    border-radius: 10px; 
-    padding: 10px; 
+    background: #0d0604; 
+    border: 3px solid #ffd700; 
+    border-radius: 14px; 
+    padding: 18px; 
     color: #ffffff; 
-    font-size: 1.05rem; 
+    font-size: 1.45rem; 
     font-weight: bold; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.6); 
-    margin-bottom: 8px; 
-    min-height: 55px; 
-    line-height: 1.3;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.7); 
+    margin-bottom: 15px; 
+    min-height: 90px; 
+    line-height: 1.4;
 }
 .speech-sub-jp { 
-    font-size: 0.8rem; 
+    font-size: 1.0rem; 
     color: #c9b097; 
     font-weight: normal; 
-    margin-top: 4px; 
-    border-top: 1px dashed rgba(215, 196, 158, 0.4); 
-    padding-top: 3px; 
+    margin-top: 8px; 
+    border-top: 1px dashed rgba(255, 215, 0, 0.3); 
+    padding-top: 6px; 
 }
 
 /* 本物のカフェのレシートデザイン */
 .receipt-memo { 
     background-color: #fffef2; 
-    border-left: 2px dashed #999; 
-    border-right: 2px dashed #999; 
-    border-top: 1px solid #ccc; 
-    border-bottom: 1px solid #ccc; 
-    padding: 6px; 
+    border-left: 3px dashed #999; 
+    border-right: 3px dashed #999; 
+    border-top: 2px solid #ccc; 
+    border-bottom: 2px solid #ccc; 
+    padding: 12px; 
     color: #2b1c11; 
     font-family: 'Courier New', monospace; 
-    font-size: 0.75rem; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
-    margin-bottom: 8px; 
-    line-height: 1.3; 
+    font-size: 0.95rem; 
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3); 
+    margin-bottom: 15px; 
+    line-height: 1.4; 
 }
 .receipt-header { 
     text-align: center; 
     font-weight: bold; 
-    font-size: 0.8rem; 
-    border-bottom: 1.5px dashed #2b1c11; 
-    margin-bottom: 3px; 
-    padding-bottom: 1px; 
+    font-size: 1.1rem; 
+    border-bottom: 2px dashed #2b1c11; 
+    margin-bottom: 8px; 
+    padding-bottom: 4px; 
 }
 .receipt-item-container { 
     display: flex; 
     flex-wrap: wrap; 
     justify-content: space-between; 
-    gap: 4px; 
+    gap: 8px; 
 }
 .receipt-item { 
-    font-size: 0.7rem; 
+    font-size: 0.9rem; 
     background: rgba(0,0,0,0.06); 
-    padding: 2px 4px; 
-    border-radius: 4px; 
+    padding: 4px 8px; 
+    border-radius: 6px; 
     font-weight: bold;
 }
 .receipt-total { 
-    border-top: 1.5px dashed #2b1c11; 
-    margin-top: 4px; 
-    padding-top: 2px; 
+    border-top: 2px dashed #2b1c11; 
+    margin-top: 8px; 
+    padding-top: 6px; 
     font-weight: bold; 
-    font-size: 0.85rem; 
+    font-size: 1.15rem; 
     display: flex; 
     justify-content: space-between; 
     width: 100%; 
@@ -193,25 +196,25 @@ st.markdown("""<style>
 /* マイク録音エリア */
 .mic-container { 
     background: rgba(255, 255, 255, 0.05); 
-    border: 2px dashed rgba(215, 196, 158, 0.5); 
-    padding: 6px; 
-    border-radius: 8px; 
+    border: 3px dashed rgba(215, 196, 158, 0.6); 
+    padding: 12px; 
+    border-radius: 12px; 
     text-align: center; 
-    margin-bottom: 8px; 
+    margin-bottom: 15px; 
 }
 .equalizer-wave { 
     display: flex; 
     justify-content: center; 
     align-items: center; 
-    height: 12px; 
-    gap: 3px; 
-    margin: 2px 0; 
+    height: 18px; 
+    gap: 4px; 
+    margin: 4px 0; 
 }
 .wave-bar { 
-    width: 3px; 
+    width: 4px; 
     height: 100%; 
     background-color: #ffd700; 
-    border-radius: 1.5px; 
+    border-radius: 2px; 
     animation: waveAnim 1.2s ease-in-out infinite; 
 }
 .wave-bar:nth-child(2) { animation-delay: 0.1s; background-color: #ff9900; }
@@ -221,210 +224,118 @@ st.markdown("""<style>
 
 /* 発音スコア判定バッジ */
 .pronunciation-badge-container { 
-    margin-bottom: 8px; 
+    margin-bottom: 12px; 
     background: #0d0604; 
-    border: 1.5px solid #8b5a2b; 
-    border-radius: 6px; 
-    padding: 4px 8px; 
+    border: 2px solid #8b5a2b; 
+    border-radius: 8px; 
+    padding: 8px 12px; 
     display: flex; 
     align-items: center; 
     justify-content: space-between;
 }
 .badge-label { 
     color: #ffd700; 
-    font-size: 0.75rem; 
+    font-size: 0.9rem; 
     font-family: monospace; 
 }
-.pron-perfect { color: #00ff7f; font-weight: bold; font-size: 0.8rem; }
-.pron-good { color: #ffd700; font-weight: bold; font-size: 0.8rem; }
+.pron-perfect { color: #00ff7f; font-weight: bold; font-size: 1.0rem; }
+.pron-good { color: #ffd700; font-weight: bold; font-size: 1.0rem; }
 
-/* スタンプカードのサイズを小さめにして縦幅圧迫を回避 */
+/* スタンプカード */
 .stamp-card-box { 
     background: #fffef8; 
-    border: 2px solid #8b5a2b; 
-    border-radius: 8px; 
-    padding: 4px; 
-    margin-top: 5px; 
+    border: 3px solid #8b5a2b; 
+    border-radius: 12px; 
+    padding: 8px; 
+    margin-top: 10px; 
     text-align: center; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
 }
 .stamp-title { 
-    font-size: 0.7rem; 
+    font-size: 0.85rem; 
     font-weight: bold; 
     color: #4a2e16; 
-    margin-bottom: 2px; 
+    margin-bottom: 5px; 
 }
 .stamp-grid { 
     display: flex; 
     justify-content: center; 
-    gap: 4px; 
+    gap: 6px; 
     flex-wrap: wrap; 
 }
 .stamp-slot { 
-    width: 20px; 
-    height: 20px; 
+    width: 30px; 
+    height: 30px; 
     border-radius: 50%; 
-    border: 1.5px dashed #ccc; 
+    border: 2px dashed #ccc; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    font-size: 0.65rem; 
+    font-size: 0.9rem; 
     background: #fff; 
+    font-weight: bold;
+    color: #777;
 }
 .stamp-active { 
-    border: 1.5px solid #ff4500; 
+    border: 2px solid #ff4500; 
     background: #ffe4e1; 
 }
 
-/* メニューカードの見た目の改善 */
+/* メニューカード看板 */
 .menu-card {
     background: rgba(30, 18, 12, 0.85);
-    border: 2px solid #8b5a2b;
-    border-radius: 10px;
-    padding: 8px;
+    border: 2.5px solid #8b5a2b;
+    border-radius: 12px;
+    padding: 10px;
     text-align: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    margin-bottom: 5px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    margin-bottom: 8px;
 }
 .menu-card-title {
     color: #ffd700;
     font-weight: bold;
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     margin-bottom: 4px;
+}
+
+/* お札画像のタップ領域用のエフェクト（PC等でのホバー効果を復活） */
+img.cash-img-btn {
+    transition: transform 0.2s ease, filter 0.2s ease;
+    cursor: pointer;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+img.cash-img-btn:hover {
+    transform: scale(1.08) translateY(-4px);
+    filter: brightness(1.15) drop-shadow(0px 8px 12px rgba(255, 215, 0, 0.4));
 }
 
 /* デジタル会員証アワードのデザイン */
 .award-card { 
     background: linear-gradient(135deg, #150d0a 0%, #2a1810 100%); 
-    border: 3px solid #ffd700; 
-    border-radius: 12px; 
-    padding: 12px; 
+    border: 4px solid #ffd700; 
+    border-radius: 16px; 
+    padding: 16px; 
     text-align: center; 
     color: white; 
-    box-shadow: 0 8px 16px rgba(0,0,0,0.6); 
-    margin: 8px 0; 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.7); 
+    margin: 12px 0; 
 }
 .award-title { 
-    font-size: 1.1rem; 
+    font-size: 1.3rem; 
     font-weight: bold; 
     color: #ffd700; 
 }
 .award-name { 
-    font-size: 1.0rem; 
-    font-family: 'Courier New', monospace; 
-    margin: 4px 0; 
-    border-bottom: 1px dashed #ffd700; 
-    padding-bottom: 4px; 
+    font-size: 1.15rem; 
+    font-family: 'Georgia', serif; 
+    margin: 6px 0; 
+    border-bottom: 2.5px dashed #ffd700; 
+    padding-bottom: 6px; 
 }
 .award-badge { 
-    font-size: 2.0rem; 
-    margin: 5px 0; 
-}
-
-/* 
-  🚨 スマホ横画面（Landscape）で左右が「絶対に縦に潰れず、100%綺麗に左右分割」を維持する超強力CSS
-  Streamlitの標準カラム構造 [data-testid="stHorizontalBlock"] をCSSで直接上書き強制します。
-*/
-@media screen and (max-width: 950px) and (orientation: landscape) {
-    /* ページの最大幅の余白を極限まで削る */
-    .block-container {
-        padding: 4px !important;
-    }
-    .game-title {
-        font-size: 1.0rem !important;
-        margin-bottom: 2px !important;
-    }
-    
-    /* Streamlitが勝手に縦一列に並べるのを、100%強制的に左右50%の横並びに固定！ */
-    [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 8px !important;
-        align-items: stretch !important;
-    }
-    [data-testid="column"] {
-        width: 50% !important;
-        flex: 1 1 50% !important;
-        min-width: 0 !important;
-    }
-
-    /* 各コンテナのパディングを削って高さを稼ぐ */
-    .column-container {
-        padding: 6px !important;
-        margin-bottom: 4px !important;
-    }
-
-    /* お姉さんステージの高さをスマホの極狭な縦幅に完全に調和させる（これではみ出し・重なりを防止） */
-    .character-stage {
-        height: 100px !important;
-        margin-bottom: 4px !important;
-    }
-
-    /* セリフウィンドウをぎりぎりまでスリム化、文字サイズを適切に調整 */
-    .speech-window {
-        font-size: 0.85rem !important;
-        padding: 4px 8px !important;
-        min-height: 40px !important;
-        margin-bottom: 4px !important;
-    }
-    .speech-sub-jp {
-        font-size: 0.65rem !important;
-        margin-top: 2px !important;
-        padding-top: 2px !important;
-    }
-
-    /* レシートもコンパクトにして綺麗に収める */
-    .receipt-memo {
-        padding: 3px 5px !important;
-        margin-bottom: 4px !important;
-    }
-    .receipt-header {
-        font-size: 0.65rem !important;
-        margin-bottom: 1px !important;
-    }
-    .receipt-item {
-        font-size: 0.55rem !important;
-        padding: 1px 2px !important;
-    }
-    .receipt-total {
-        font-size: 0.7rem !important;
-        margin-top: 2px !important;
-        padding-top: 1px !important;
-    }
-
-    /* マイクエリアの縮小 */
-    .mic-container {
-        padding: 4px !important;
-        margin-bottom: 4px !important;
-    }
-    
-    /* 選択肢ボタンをスリムにしてタップしやすく */
-    .stButton button {
-        padding: 2px 4px !important;
-        font-size: 0.7rem !important;
-        min-height: 26px !important;
-    }
-
-    /* スタンプカードの縮小 */
-    .stamp-card-box {
-        padding: 3px !important;
-        margin-top: 3px !important;
-    }
-    .stamp-title {
-        font-size: 0.6rem !important;
-        margin-bottom: 1px !important;
-    }
-    .stamp-slot {
-        width: 14px !important;
-        height: 14px !important;
-        font-size: 0.5rem !important;
-    }
-    
-    /* お札画像の縮小 */
-    img.cash-img-btn {
-        max-width: 65px !important;
-        margin: 0 auto !important;
-    }
+    font-size: 2.5rem; 
+    margin: 8px 0; 
 }
 </style>""", unsafe_allow_html=True)
 
@@ -611,7 +522,7 @@ with main_col:
     if st.session_state.step < 7:
         # マイク入力
         st.markdown('<div class="mic-container">', unsafe_allow_html=True)
-        st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:1px; font-size:0.8rem;'>🎤 English Speech Action (英語でしゃべる)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:4px; font-size:1.0rem;'>🎤 English Speech Action (英語でしゃべる)</p>", unsafe_allow_html=True)
         st.markdown("<div class='equalizer-wave'><div class='wave-bar'></div><div class='wave-bar'></div><div class='wave-bar'></div><div class='wave-bar'></div></div>", unsafe_allow_html=True)
         
         mic_input = speech_to_text(
@@ -628,7 +539,7 @@ with main_col:
             i_class = "pron-perfect" if st.session_state.pronunciation_status == "perfect" else "pron-good"
             st.markdown(f"<div class='pronunciation-badge-container'><div class='badge-label'>🗣️ {st.session_state.p_heard_text} ➡️ {st.session_state.p_matched_keyword}</div><div class='{i_class}'>{icon}</div></div>", unsafe_allow_html=True)
 
-        st.markdown("<p style='color:#ffffff; font-weight:bold; margin-bottom:3px; font-size:0.75rem;'>👇 Or touch the correct phrase button below:</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#ffffff; font-weight:bold; margin-bottom:6px; font-size:0.95rem;'>👇 Or touch the correct phrase button below:</p>", unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
         keywords = []
@@ -641,14 +552,14 @@ with main_col:
             # メニュー看板（見るだけのビジュアル要素）
             menu_col1, menu_col2, menu_col3 = st.columns(3)
             with menu_col1:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$5.00</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], width=50)
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#aaa; font-size:0.8rem; margin:0;'>$5.00</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
             with menu_col2:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$6.00</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["latte"]): st.image(item_images["latte"], width=50)
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#aaa; font-size:0.8rem; margin:0;'>$6.00</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
             with menu_col3:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$5.50</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["tea"]): st.image(item_images["tea"], width=50)
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#aaa; font-size:0.8rem; margin:0;'>$5.50</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
 
             # 英語フレーズ選択ボタン
             with col1:
@@ -684,13 +595,13 @@ with main_col:
             # フード看板
             menu_col1, menu_col2, menu_col3 = st.columns(3)
             with menu_col1:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>+$6.50</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["cake"]): st.image(item_images["cake"], width=50)
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#aaa; font-size:0.8rem; margin:0;'>+$6.50</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["cake"]): st.image(item_images["cake"], use_container_width=True)
             with menu_col2:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥪 Sandwich</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>+$8.50</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["sandwich"]): st.image(item_images["sandwich"], width=50)
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥪 Sandwich</p><p style='color:#aaa; font-size:0.8rem; margin:0;'>+$8.50</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["sandwich"]): st.image(item_images["sandwich"], use_container_width=True)
             with menu_col3:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>❌ No Food</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$0.00</p></div>", unsafe_allow_html=True)
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>❌ No Food</p><p style='color:#aaa; font-size:0.8rem; margin:0;'>$0.00</p></div>", unsafe_allow_html=True)
 
             with col1:
                 if st.button("🍰 Cake, please.", key='btn_cake', use_container_width=True): user_choice = "Cake, please."
@@ -712,8 +623,7 @@ with main_col:
             keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
             fuzzy_rules = {"5": ["five dollars"], "10": ["ten dollars"], "20": ["twenty dollars"]}
             
-            # 手持ちの現金（5ドル、10ドル、20ドル）が足りるかチェックし、足りない場合はグレーアウト表示
-            st.markdown("<p style='color:#ffd700; font-weight:bold; font-size:0.75rem; text-align:center;'>💳 Tap cash to pay (お札をタップして支払う)</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#ffd700; font-weight:bold; font-size:1.0rem; text-align:center; margin-bottom:10px;'>💳 Tap cash to pay (お札をタップして支払う)</p>", unsafe_allow_html=True)
             
             with col1:
                 if total_p <= 5.0:
@@ -723,7 +633,7 @@ with main_col:
                     else:
                         if st.button("💵 Here is $5.00", key='btn_pay_5', use_container_width=True): user_choice = "Here is 5 dollars."
                 else:
-                    st.markdown("<div style='text-align:center; opacity:0.35;'><span style='font-size:0.6rem; color:#fff;'>Not Enough</span></div>", unsafe_allow_html=True)
+                    st.markdown("<div style='text-align:center; opacity:0.35;'><span style='font-size:0.8rem; color:#fff; font-weight:bold;'>Not Enough</span></div>", unsafe_allow_html=True)
                     if os.path.exists(cash_images["5"]):
                         st.image(cash_images["5"], use_container_width=True, output_format="PNG")
                     st.button("💵 $5.00 (足りません)", key='btn_pay_5_dis', disabled=True, use_container_width=True)
@@ -736,7 +646,7 @@ with main_col:
                     else:
                         if st.button("💵 Here is $10.00", key='btn_pay_10', use_container_width=True): user_choice = "Here is 10 dollars."
                 else:
-                    st.markdown("<div style='text-align:center; opacity:0.35;'><span style='font-size:0.6rem; color:#fff;'>Not Enough</span></div>", unsafe_allow_html=True)
+                    st.markdown("<div style='text-align:center; opacity:0.35;'><span style='font-size:0.8rem; color:#fff; font-weight:bold;'>Not Enough</span></div>", unsafe_allow_html=True)
                     if os.path.exists(cash_images["10"]):
                         st.image(cash_images["10"], use_container_width=True, output_format="PNG")
                     st.button("💵 $10.00 (足りません)", key='btn_pay_10_dis', disabled=True, use_container_width=True)
@@ -749,7 +659,7 @@ with main_col:
                 else:
                     if st.button("💵 Here is $20.00", key='btn_pay_20', use_container_width=True): user_choice = "Here is 20 dollars."
 
-            st.markdown("<div style='margin-top:5px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
             if st.button("💳 Pay by card, please.", key='btn_pay_card_alt', use_container_width=True): user_choice = "Card, please."
 
         user_typed = st.chat_input("Or type here...")
@@ -835,7 +745,7 @@ with main_col:
                             st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文のドリンク{food_msg_jp}もどうぞ。ごゆっくり！"
                         else:
                             st.session_state.current_npc_en = f"Thank you for the exact amount! Here is your drink{food_msg}. Enjoy your time!"
-                            st.session_state.current_npc_jp = f"ちょうどのお支払いでありがとうございます！ご注文 of ドリンク{food_msg_jp}です。ごゆっくり！"
+                            st.session_state.current_npc_jp = f"ちょうどのお支払いでありがとうございます！ご注文のドリンク{food_msg_jp}です。ごゆっくり！"
                     else:
                         st.session_state.current_npc_en = f"Thank you so much! Payment approved. Here is your drink{food_msg}. Enjoy your time!"
                         st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文のドリンク{food_msg_jp}になります。ごゆっくり！"
@@ -859,7 +769,6 @@ with main_col:
             st.session_state.stamp_processed = True
             st.rerun()
 
-        # 安全なアニメーション演出（バグを出すHTMLコードは使わず、安全な標準エフェクトを使用）
         st.balloons()
         st.snow()
         st.success("🎉 Good Job! Roleplay Completed!")
@@ -867,11 +776,11 @@ with main_col:
         # 会員証（アワードカード）の表示
         stamps = st.session_state.total_stamps
         if stamps >= 10:
-            st.markdown(f"""<div class='award-card'><div class='award-title'>👑 GRAND CAFE MASTER 👑</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>👑🏆👑</div><p style='margin:0; font-size:0.8rem; color:#ffd700;'>あなたは最高峰のカフェマスターです！</p></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class='award-card'><div class='award-title'>👑 GRAND CAFE MASTER 👑</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>👑🏆👑</div><p style='margin:0; font-size:1.0rem; color:#ffd700; font-weight:bold;'>あなたは最高峰のカフェマスターです！</p></div>""", unsafe_allow_html=True)
         elif stamps >= 5:
-            st.markdown(f"""<div class='award-card' style='border-color:#ff9900;'><div class='award-title' style='color:#ff9900;'>🥇 REGULAR VIP MEMBER 🥇</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥇✨🎖️</div><p style='margin:0; font-size:0.8rem; color:#ff9900;'>いつもありがとう！常連VIP会員証</p></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class='award-card' style='border-color:#ff9900;'><div class='award-title' style='color:#ff9900;'>🥇 REGULAR VIP MEMBER 🥇</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥇✨🎖️</div><p style='margin:0; font-size:1.0rem; color:#ff9900; font-weight:bold;'>いつもありがとう！常連VIP会員証</p></div>""", unsafe_allow_html=True)
         elif stamps >= 3:
-            st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p style='margin:0; font-size:0.8rem; color:#b5733d;'>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p style='margin:0; font-size:1.0rem; color:#b5733d; font-weight:bold;'>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
 
         if st.button("🔄 Play Again (もういちど遊ぶ)", key='btn_play_again_action', use_container_width=True):
             keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_food", "ordered_place", "ordered_payment_type", "paid_amount", "change_amount", "has_food_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed"]
