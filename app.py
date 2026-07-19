@@ -34,6 +34,7 @@ item_images = {
 }
 
 cash_images = {
+    "5": "images/cash_5.png",
     "10": "images/cash_10.png",
     "20": "images/cash_20.png"
 }
@@ -266,21 +267,26 @@ if "total_stamps" not in st.session_state:
 if "kid_name" not in st.session_state:
     st.session_state.kid_name = "Guest"
 
-# --- 5. 【20ドル札復活＆手持ち上限調整システム】 ---
+# --- 5. 【おさいふのランダム初期化（5, 10, 20ドルがランダムで登場）】 ---
 def init_random_wallet():
-    # 今日のおさいふの総額をピッタリ「$20」に固定（20ドル札1枚 か 10ドル札2枚）
+    st.session_state.wallet_5 = 0
     st.session_state.wallet_10 = 0
     st.session_state.wallet_20 = 0
     
-    if random.choice([True, False]):
-        st.session_state.wallet_20 = 1
+    # パターンをランダムに設定してお買い物に変化を持たせる
+    wallet_pattern = random.choice(["only_5", "mix_10", "big_20"])
+    if wallet_pattern == "only_5":
+        st.session_state.wallet_5 = 1  # 5ドル札1枚だけのスリリングモード
+    elif wallet_pattern == "mix_10":
+        st.session_state.wallet_5 = 1
+        st.session_state.wallet_10 = 1 # 合計15ドル
     else:
-        st.session_state.wallet_10 = 2
+        st.session_state.wallet_20 = 1 # 20ドル札1枚のドカンとモード
 
-if "wallet_10" not in st.session_state:
+if "wallet_5" not in st.session_state:
     init_random_wallet()
 
-wallet_total = (st.session_state.wallet_10 * 10) + (st.session_state.wallet_20 * 20)
+wallet_total = (st.session_state.wallet_5 * 5) + (st.session_state.wallet_10 * 10) + (st.session_state.wallet_20 * 20)
 
 # --- 6. ゲーム内会話状態の設定 ---
 if "step" not in st.session_state:
@@ -344,24 +350,25 @@ with visual_col:
 
     st.markdown(f"<div class='character-stage'>{staff_html}{drink_html}{food_html}</div>", unsafe_allow_html=True)
 
-    # 👛 今日のおさいふ表示ボード（20ドル対応版）
+    # 👛 今日のおさいふ表示ボード（5ドル・10ドル・20ドル対応版）
     st.markdown(f"""
     <div class="wallet-box">
         <div class="wallet-title"><span>👛 MY WALLET (きょうのおさいふ)</span> <span>Total: ${wallet_total:.2f}</span></div>
         <div class="wallet-row">
+            <span>💵 $5.00 × <b>{st.session_state.wallet_5}</b></span>
             <span>💵 $10.00 × <b>{st.session_state.wallet_10}</b></span>
             <span>💵 $20.00 × <b>{st.session_state.wallet_20}</b></span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 【超高級価格調整】トッピング全部載せで$20をギリギリ超えるスレスレ設定
-    drink_prices = {"coffee": 7.5, "tea": 7.5, "latte": 8.5}
+    # 【価格幅のチューニング】5ドル札だけでも買える絶妙なライン設定
+    drink_prices = {"coffee": 4.0, "tea": 4.0, "latte": 5.0}
     drink_p = drink_prices.get(st.session_state.ordered_drink, 0.0)
     temp_p = 0.5 if st.session_state.drink_temp == "iced" else 0.0
-    size_prices = {"small": 0.0, "medium": 2.0, "large": 3.5}
+    size_prices = {"small": 0.0, "medium": 1.5, "large": 3.0}
     size_p = size_prices.get(st.session_state.ordered_size, 0.0)
-    food_prices = {"cake": 8.5, "sandwich": 9.0}
+    food_prices = {"cake": 8.0, "sandwich": 9.5}
     food_p = food_prices.get(st.session_state.ordered_food, 0.0)
     
     total_p = 0.0
@@ -531,36 +538,33 @@ with main_col:
                 if st.button("🛍️ To go, please.", key='b_tg', use_container_width=True): user_choice = "go"
                 
         elif st.session_state.step == 6:
-            keywords = ["10", "20", "ten", "twenty", "card"]
+            keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
             
-            pay_col1, pay_col2 = st.columns(2)
+            pay_col1, pay_col2, pay_col3 = st.columns(3)
             with pay_col1:
-                # 10ドル札を1枚以上持っていて、かつ支払額が10ドル以下のときだけ有効
-                can_pay_10 = (st.session_state.wallet_10 > 0) and (10.0 >= total_p)
-                if os.path.exists(cash_images.get("10", "")):
-                    st.image(cash_images["10"], use_container_width=True)
-                if st.button("💵 Give $10.00", key='p_10', disabled=not can_pay_10, use_container_width=True): 
-                    user_choice = "10"
-                if not can_pay_10:
-                    st.caption("※手持ちがないか金額不足")
+                can_pay_5 = (st.session_state.wallet_5 > 0) and (5.0 >= total_p)
+                if os.path.exists(cash_images.get("5", "")): st.image(cash_images["5"], use_container_width=True)
+                if st.button("💵 Give $5.00", key='p_5', disabled=not can_pay_5, use_container_width=True): user_choice = "5"
+                if not can_pay_5: st.caption("※手持ちなし/不足")
             
             with pay_col2:
-                # 20ドル札を1枚以上持っていて、かつ支払額が20ドル以下のときだけ有効
+                can_pay_10 = (st.session_state.wallet_10 > 0) and (10.0 >= total_p)
+                if os.path.exists(cash_images.get("10", "")): st.image(cash_images["10"], use_container_width=True)
+                if st.button("💵 Give $10.00", key='p_10', disabled=not can_pay_10, use_container_width=True): user_choice = "10"
+                if not can_pay_10: st.caption("※手持ちなし/不足")
+                
+            with pay_col3:
                 can_pay_20 = (st.session_state.wallet_20 > 0) and (20.0 >= total_p)
-                if os.path.exists(cash_images.get("20", "")):
-                    st.image(cash_images["20"], use_container_width=True)
-                if st.button("💵 Give $20.00", key='p_20', disabled=not can_pay_20, use_container_width=True): 
-                    user_choice = "20"
-                if not can_pay_20:
-                    st.caption("※手持ちがないか金額不足")
+                if os.path.exists(cash_images.get("20", "")): st.image(cash_images["20"], use_container_width=True)
+                if st.button("💵 Give $20.00", key='p_20', disabled=not can_pay_20, use_container_width=True): user_choice = "20"
+                if not can_pay_20: st.caption("※手持ちなし/不足")
 
             st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
             if st.button("💳 Pay by card, please. (カードで払う)", key='b_card', use_container_width=True): 
                 user_choice = "card"
 
-            # 20ドルまたは10ドルの手持ちを超えてしまい、現金で支払えない場合の警告
-            if not can_pay_10 and not can_pay_20:
-                st.error("⚠️ Oh no! お財布の現金（最大$20）が足りないみたい！カードで払うか、次は合計を計算しながら注文してみてね！")
+            if not can_pay_5 and not can_pay_10 and not can_pay_20:
+                st.error("⚠️ おっと！いま手持ちの現金では足りないみたい！カードで払うか、次は合計を抑えて注文してみてね！")
 
         user_typed = st.chat_input("Or type here...")
         raw_input_text = mic_input or user_choice or user_typed
@@ -615,7 +619,11 @@ with main_col:
                     food_msg = f" and {st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
                     food_msg_jp = f"と{st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
                     
-                    if matched_key in ["10", "ten"]:
+                    if matched_key in ["5", "five"]:
+                        st.session_state.ordered_payment_type = "cash ($5)"
+                        st.session_state.paid_amount = 5.0
+                        st.session_state.wallet_5 -= 1
+                    elif matched_key in ["10", "ten"]:
                         st.session_state.ordered_payment_type = "cash ($10)"
                         st.session_state.paid_amount = 10.0
                         st.session_state.wallet_10 -= 1
