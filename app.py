@@ -32,7 +32,6 @@ item_images = {
     "sandwich": "images/sandwich.png"
 }
 
-# アップロードされたお札画像のパス
 cash_images = {
     "5": "images/cash_5.png",
     "10": "images/cash_10.png",
@@ -42,295 +41,400 @@ cash_images = {
 bg_base64 = get_image_base64(bg_path)
 staff_normal_base = get_image_base64(staff_normal_path)
 staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_happy_path) else staff_normal_base
-bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #2b1c11;"
+bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #1e120c;"
 
-# --- 3. 新・リアル価格シミュレーター用の価格設定 ---
-DRINK_PRICES = {
-    "coffee": 5.00,
-    "latte": 6.00,
-    "tea": 5.50
-}
-TEMP_PRICES = {
-    "hot": 0.00,
-    "iced": 1.00
-}
-SIZE_PRICES = {
-    "small": 0.00,
-    "medium": 1.50,
-    "large": 2.50
-}
-FOOD_PRICES = {
-    "none": 0.00,
-    "cake": 6.50,
-    "sandwich": 8.50
-}
-
-# --- 4. デザインCSS (文字拡大・スマホ横画面2列レイアウト強制) ---
+# --- 3. スマホ完全調和・重なり絶対回避の超スリムCSSデザイン ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
-/* 全体のレイアウト調整 */
-.block-container { background-color: rgba(0, 0, 0, 0.2); padding: 0.5rem !important; }
-.game-title { color: #ffffff; text-align: center; font-family: 'Arial', sans-serif; font-size: 2.2rem; font-weight: bold; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); margin: 5px 0 15px 0; }
+/* Streamlitデフォルトの不要な余白を完全にゼロ化して、狭いスマホ画面の上下を確保 */
+.block-container { 
+    max-width: 100% !important;
+    padding: 10px !important; 
+    background-color: rgba(0, 0, 0, 0.4); 
+}
 
-/* キャラクター＆プレゼントエリア */
-.character-stage { display: flex; justify-content: center; align-items: flex-end; height: 220px; margin-bottom: 8px; position: relative; overflow: hidden; border-radius: 12px; background: rgba(0,0,0,0.3); }
-.npc-large-img { max-height: 100%; width: auto; object-fit: contain; filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.5)); animation: subtleFloat 3s infinite ease-in-out; position: relative; bottom: 0px; z-index: 5; }
-.drink-present { position: absolute; bottom: 5px; right: 10%; width: 75px; height: 75px; object-fit: contain; z-index: 10; filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6)); animation: popIn 0.6s ease forwards; }
-.food-present { position: absolute; bottom: 5px; right: 25%; width: 70px; height: 70px; object-fit: contain; z-index: 11; filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6)); animation: popIn 0.7s ease forwards; }
-@keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes subtleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+/* ゲーム全体のタイトル */
+.game-title { 
+    color: #ffffff; 
+    text-align: center; 
+    font-family: 'Comic Sans MS', sans-serif; 
+    font-size: 1.4rem; 
+    font-weight: bold; 
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.9); 
+    margin: 0px 0px 5px 0px; 
+}
 
-/* セリフウィンドウ */
-.speech-window { background: rgba(26, 15, 8, 0.98); border: 3px solid #d7c49e; border-radius: 12px; padding: 12px 18px; color: #ffffff; font-size: 1.4rem; font-weight: bold; box-shadow: 0 6px 20px rgba(0,0,0,0.6); margin-bottom: 8px; min-height: 70px; line-height: 1.5; }
-.speech-sub-jp { font-size: 1.0rem; color: #dcd0ca; font-weight: normal; margin-top: 6px; border-top: 1px dashed rgba(215, 196, 158, 0.5); padding-top: 6px; }
-
-/* リアルなデカレシート */
-.receipt-memo { background-color: #fffef0; border-left: 3px dashed #ccc; border-right: 3px dashed #ccc; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 10px 14px; color: #222222; font-family: 'Courier New', monospace; font-size: 0.95rem; box-shadow: 0 6px 12px rgba(0,0,0,0.2); margin-top: 4px; margin-bottom: 8px; line-height: 1.4; }
-.receipt-header { text-align: center; font-weight: bold; font-size: 1.1rem; border-bottom: 1.5px dashed #333; margin-bottom: 6px; padding-bottom: 4px; color: #111; }
-.receipt-item-container { display: flex; flex-direction: column; gap: 4px; }
-.receipt-item { font-size: 0.9rem; background: rgba(0,0,0,0.04); padding: 3px 8px; border-radius: 4px; display: flex; justify-content: space-between; }
-.receipt-total { border-top: 2px dashed #333; margin-top: 6px; padding-top: 4px; font-weight: bold; font-size: 1.2rem; display: flex; justify-content: space-between; width: 100%; color: #d32f2f; }
-
-/* 音声マイク＆イコライザー */
-.mic-container { background: rgba(255, 255, 255, 0.12); border: 2.5px dashed rgba(215, 196, 158, 0.8); padding: 10px; border-radius: 12px; text-align: center; margin-bottom: 8px; }
-.equalizer-wave { display: flex; justify-content: center; align-items: center; height: 20px; gap: 5px; margin: 4px 0; }
-.wave-bar { width: 5px; height: 100%; background-color: #ffd700; border-radius: 2.5px; animation: waveAnim 1.2s ease-in-out infinite; }
-.wave-bar:nth-child(2) { animation-delay: 0.1s; background-color: #ffb700; }
-.wave-bar:nth-child(3) { animation-delay: 0.2s; background-color: #ff9900; }
-.wave-bar:nth-child(4) { animation-delay: 0.3s; background-color: #ffb700; }
-.wave-bar:nth-child(5) { animation-delay: 0.4s; background-color: #ffd700; }
-@keyframes waveAnim { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1.0); } }
-
-/* 発音判定バッジ */
-.pronunciation-badge-container { margin-top: 6px; margin-bottom: 6px; background: rgba(43, 28, 17, 0.98); border: 2px solid #8b5a2b; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.badge-label { color: #d7c49e; font-size: 0.95rem; font-family: monospace; text-align: center; }
-.pron-perfect { color: #ffd700; font-weight: bold; font-size: 1.1rem; }
-.pron-good { color: #50c878; font-weight: bold; font-size: 1.1rem; }
-
-/* 全ボタンデザイン */
-.stButton button { padding: 8px 16px !important; font-size: 1.15rem !important; font-weight: bold !important; height: auto !important; min-height: 48px !important; border-radius: 10px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important; }
-
-/* お店スタンプカード */
-.stamp-card-box { background: rgba(255, 255, 255, 0.98); border: 2.5px solid #ffb700; border-radius: 10px; padding: 8px; margin-top: 8px; text-align: center; box-shadow: 0 6px 10px rgba(0,0,0,0.15); }
-.stamp-title { font-size: 1.0rem; font-weight: bold; color: #8b5a2b; margin-bottom: 5px; }
-.stamp-grid { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.stamp-slot { width: 36px; height: 36px; border-radius: 50%; border: 2px dashed #bbb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #fff; font-weight: bold; }
-.stamp-active { border: 2px solid #ff4500; background: #ffe4e1; animation: stampPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-@keyframes stampPop { 0% { transform: scale(0) rotate(-30deg); } 100% { transform: scale(1) rotate(0deg); } }
-
-/* デジタル会員証アワードカード */
-.award-card { background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%); border: 4px solid #ffd700; border-radius: 16px; padding: 20px; text-align: center; color: white; box-shadow: 0 12px 25px rgba(0,0,0,0.7); margin: 15px 0; position: relative; overflow: hidden; }
-.award-title { font-size: 1.6rem; font-weight: bold; color: #ffd700; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 8px; }
-.award-name { font-size: 1.3rem; color: #ffffff; font-family: 'Courier New', monospace; margin: 8px 0; border-bottom: 1.5px dashed #ffd700; padding-bottom: 8px; }
-.award-badge { font-size: 3.5rem; margin: 12px 0; animation: badgeGlow 2s infinite alternate; }
-@keyframes badgeGlow { 0% { transform: scale(1); filter: drop-shadow(0 0 2px #ffd700); } 100% { transform: scale(1.08); filter: drop-shadow(0 0 15px #ffd700); } }
-
-/* メニュー提示用ビジュアルカード */
-.menu-display-card {
-    background: rgba(255, 255, 255, 0.98);
-    border: 2px solid #d7c49e;
+/* 左右分割用コンテナの枠線を美しく設定 */
+.column-container {
+    background: rgba(30, 18, 12, 0.95) !important; /* 透けない焦げ茶にして視認性を確保 */
+    border: 3px solid #8b5a2b;
     border-radius: 12px;
     padding: 10px;
-    text-align: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    margin-bottom: 10px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    margin-bottom: 8px;
 }
-.menu-display-img {
-    width: 100%;
-    max-height: 100px;
-    object-fit: contain;
-    border-radius: 8px;
-    margin-bottom: 6px;
+
+/* キャラクター（お姉さん）のステージ部分。高さをつぶしてスマホでも絶対に上下が重ならないように */
+.character-stage { 
+    display: flex; 
+    justify-content: center; 
+    align-items: flex-end; 
+    height: 140px; 
+    margin-bottom: 5px; 
+    position: relative; 
+    overflow: hidden; 
+    border-radius: 8px; 
+    background: rgba(0,0,0,0.3); 
+    border: 2px solid #5a381e;
 }
-.menu-display-label {
-    font-size: 1.0rem;
+.npc-large-img { 
+    max-height: 100%; 
+    width: auto; 
+    object-fit: contain; 
+    filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.6)); 
+    position: relative; 
+    bottom: 0px; 
+    z-index: 5; 
+}
+
+/* 手渡しアイテム（ドリンク・ケーキ等）の配置アニメーション */
+.drink-present { 
+    position: absolute; 
+    bottom: 5px; 
+    right: 15%; 
+    width: 45px; 
+    height: 45px; 
+    object-fit: contain; 
+    z-index: 10; 
+    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); 
+}
+.food-present { 
+    position: absolute; 
+    bottom: 5px; 
+    right: 35%; 
+    width: 40px; 
+    height: 40px; 
+    object-fit: contain; 
+    z-index: 11; 
+    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); 
+}
+
+/* セリフ吹き出しエリア（背景をしっかりダークにして文字を100%見やすく） */
+.speech-window { 
+    background: #110905; 
+    border: 2.5px solid #d7c49e; 
+    border-radius: 10px; 
+    padding: 10px; 
+    color: #ffffff; 
+    font-size: 1.05rem; 
+    font-weight: bold; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6); 
+    margin-bottom: 8px; 
+    min-height: 55px; 
+    line-height: 1.3;
+}
+.speech-sub-jp { 
+    font-size: 0.8rem; 
+    color: #c9b097; 
+    font-weight: normal; 
+    margin-top: 4px; 
+    border-top: 1px dashed rgba(215, 196, 158, 0.4); 
+    padding-top: 3px; 
+}
+
+/* 本物のカフェのレシートデザイン */
+.receipt-memo { 
+    background-color: #fffef2; 
+    border-left: 2px dashed #999; 
+    border-right: 2px dashed #999; 
+    border-top: 1px solid #ccc; 
+    border-bottom: 1px solid #ccc; 
+    padding: 6px; 
+    color: #2b1c11; 
+    font-family: 'Courier New', monospace; 
+    font-size: 0.75rem; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
+    margin-bottom: 8px; 
+    line-height: 1.3; 
+}
+.receipt-header { 
+    text-align: center; 
+    font-weight: bold; 
+    font-size: 0.8rem; 
+    border-bottom: 1.5px dashed #2b1c11; 
+    margin-bottom: 3px; 
+    padding-bottom: 1px; 
+}
+.receipt-item-container { 
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: space-between; 
+    gap: 4px; 
+}
+.receipt-item { 
+    font-size: 0.7rem; 
+    background: rgba(0,0,0,0.06); 
+    padding: 2px 4px; 
+    border-radius: 4px; 
     font-weight: bold;
-    color: #4e3629;
+}
+.receipt-total { 
+    border-top: 1.5px dashed #2b1c11; 
+    margin-top: 4px; 
+    padding-top: 2px; 
+    font-weight: bold; 
+    font-size: 0.85rem; 
+    display: flex; 
+    justify-content: space-between; 
+    width: 100%; 
 }
 
-/* お札を直接タップ可能にする魔法のCSSオーバーレイ */
-.cash-image-button-container {
-    position: relative;
-    width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 5px 12px rgba(0,0,0,0.3);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, filter 0.3s ease;
-    cursor: pointer;
-    background: transparent;
+/* マイク録音エリア */
+.mic-container { 
+    background: rgba(255, 255, 255, 0.05); 
+    border: 2px dashed rgba(215, 196, 158, 0.5); 
+    padding: 6px; 
+    border-radius: 8px; 
+    text-align: center; 
+    margin-bottom: 8px; 
 }
-.cash-image-button-container:hover {
-    transform: translateY(-8px) scale(1.06);
-    box-shadow: 0 12px 24px rgba(255, 215, 0, 0.5);
-    filter: brightness(1.05);
+.equalizer-wave { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 12px; 
+    gap: 3px; 
+    margin: 2px 0; 
 }
-.cash-bg-img {
-    width: 100%;
-    display: block;
-    height: auto;
-    object-fit: contain;
-    border-radius: 12px;
+.wave-bar { 
+    width: 3px; 
+    height: 100%; 
+    background-color: #ffd700; 
+    border-radius: 1.5px; 
+    animation: waveAnim 1.2s ease-in-out infinite; 
 }
-.transparent-btn-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
+.wave-bar:nth-child(2) { animation-delay: 0.1s; background-color: #ff9900; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; background-color: #ffd700; }
+.wave-bar:nth-child(4) { animation-delay: 0.3s; background-color: #ff9900; }
+@keyframes waveAnim { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1.0); } }
+
+/* 発音スコア判定バッジ */
+.pronunciation-badge-container { 
+    margin-bottom: 8px; 
+    background: #0d0604; 
+    border: 1.5px solid #8b5a2b; 
+    border-radius: 6px; 
+    padding: 4px 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
 }
-.transparent-btn-overlay div.stButton,
-.transparent-btn-overlay div.stButton > button {
-    width: 100% !important;
-    height: 100% !important;
-    background: transparent !important;
-    border: none !important;
-    color: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+.badge-label { 
+    color: #ffd700; 
+    font-size: 0.75rem; 
+    font-family: monospace; 
 }
-.transparent-btn-overlay div.stButton > button:focus,
-.transparent-btn-overlay div.stButton > button:active {
-    background: transparent !important;
-    color: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
+.pron-perfect { color: #00ff7f; font-weight: bold; font-size: 0.8rem; }
+.pron-good { color: #ffd700; font-weight: bold; font-size: 0.8rem; }
+
+/* スタンプカードのサイズを小さめにして縦幅圧迫を回避 */
+.stamp-card-box { 
+    background: #fffef8; 
+    border: 2px solid #8b5a2b; 
+    border-radius: 8px; 
+    padding: 4px; 
+    margin-top: 5px; 
+    text-align: center; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+}
+.stamp-title { 
+    font-size: 0.7rem; 
+    font-weight: bold; 
+    color: #4a2e16; 
+    margin-bottom: 2px; 
+}
+.stamp-grid { 
+    display: flex; 
+    justify-content: center; 
+    gap: 4px; 
+    flex-wrap: wrap; 
+}
+.stamp-slot { 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    border: 1.5px dashed #ccc; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 0.65rem; 
+    background: #fff; 
+}
+.stamp-active { 
+    border: 1.5px solid #ff4500; 
+    background: #ffe4e1; 
 }
 
-/* お札未対応・グレーアウト */
-.cash-disabled-container {
-    position: relative;
-    width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    opacity: 0.25;
-    filter: grayscale(100%);
-    pointer-events: none;
-    box-shadow: none;
+/* メニューカードの見た目の改善 */
+.menu-card {
+    background: rgba(30, 18, 12, 0.85);
+    border: 2px solid #8b5a2b;
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    margin-bottom: 5px;
 }
-.cash-btn-box { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2.5px solid #4caf50; border-radius: 10px; padding: 8px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.15); font-weight: bold; color: #1b5e20; font-size: 1.0rem; }
+.menu-card-title {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+}
 
-/* ==========================================
-   🚨 スマホ横画面 (Landscape) 最適化レスポンシブ
-   ========================================== */
-@media (orientation: landscape) and (max-width: 930px) {
-    /* 1. 縦積み化を強制解除し、PCと同じ左右50%幅を保持 */
+/* デジタル会員証アワードのデザイン */
+.award-card { 
+    background: linear-gradient(135deg, #150d0a 0%, #2a1810 100%); 
+    border: 3px solid #ffd700; 
+    border-radius: 12px; 
+    padding: 12px; 
+    text-align: center; 
+    color: white; 
+    box-shadow: 0 8px 16px rgba(0,0,0,0.6); 
+    margin: 8px 0; 
+}
+.award-title { 
+    font-size: 1.1rem; 
+    font-weight: bold; 
+    color: #ffd700; 
+}
+.award-name { 
+    font-size: 1.0rem; 
+    font-family: 'Courier New', monospace; 
+    margin: 4px 0; 
+    border-bottom: 1px dashed #ffd700; 
+    padding-bottom: 4px; 
+}
+.award-badge { 
+    font-size: 2.0rem; 
+    margin: 5px 0; 
+}
+
+/* 
+  🚨 スマホ横画面（Landscape）で左右が「絶対に縦に潰れず、100%綺麗に左右分割」を維持する超強力CSS
+  Streamlitの標準カラム構造 [data-testid="stHorizontalBlock"] をCSSで直接上書き強制します。
+*/
+@media screen and (max-width: 950px) and (orientation: landscape) {
+    /* ページの最大幅の余白を極限まで削る */
+    .block-container {
+        padding: 4px !important;
+    }
+    .game-title {
+        font-size: 1.0rem !important;
+        margin-bottom: 2px !important;
+    }
+    
+    /* Streamlitが勝手に縦一列に並べるのを、100%強制的に左右50%の横並びに固定！ */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        width: 100% !important;
-        gap: 10px !important;
+        gap: 8px !important;
+        align-items: stretch !important;
     }
-    [data-testid="stColumn"] {
+    [data-testid="column"] {
         width: 50% !important;
-        min-width: 50% !important;
-        flex: 1 !important;
+        flex: 1 1 50% !important;
+        min-width: 0 !important;
     }
-    
-    /* 2. 縦のスペースを節約するために各パーツの高さを縮小 */
-    .game-title {
-        font-size: 1.4rem !important;
-        margin: 2px 0 5px 0 !important;
+
+    /* 各コンテナのパディングを削って高さを稼ぐ */
+    .column-container {
+        padding: 6px !important;
+        margin-bottom: 4px !important;
     }
+
+    /* お姉さんステージの高さをスマホの極狭な縦幅に完全に調和させる（これではみ出し・重なりを防止） */
     .character-stage {
-        height: 120px !important;
+        height: 100px !important;
+        margin-bottom: 4px !important;
     }
-    .npc-large-img {
-        max-height: 100% !important;
-    }
-    .drink-present {
-        width: 45px !important;
-        height: 45px !important;
-    }
-    .food-present {
-        width: 40px !important;
-        height: 40px !important;
-    }
-    
-    /* 3. セリフテキストとレシートのスリム化 */
+
+    /* セリフウィンドウをぎりぎりまでスリム化、文字サイズを適切に調整 */
     .speech-window {
-        font-size: 1.05rem !important;
-        padding: 6px 12px !important;
+        font-size: 0.85rem !important;
+        padding: 4px 8px !important;
         min-height: 40px !important;
         margin-bottom: 4px !important;
     }
     .speech-sub-jp {
-        font-size: 0.8rem !important;
-        margin-top: 3px !important;
-        padding-top: 3px !important;
+        font-size: 0.65rem !important;
+        margin-top: 2px !important;
+        padding-top: 2px !important;
     }
+
+    /* レシートもコンパクトにして綺麗に収める */
     .receipt-memo {
-        font-size: 0.8rem !important;
-        padding: 5px 8px !important;
+        padding: 3px 5px !important;
         margin-bottom: 4px !important;
     }
     .receipt-header {
-        font-size: 0.85rem !important;
-        margin-bottom: 3px !important;
+        font-size: 0.65rem !important;
+        margin-bottom: 1px !important;
     }
     .receipt-item {
-        font-size: 0.75rem !important;
-        padding: 1px 4px !important;
+        font-size: 0.55rem !important;
+        padding: 1px 2px !important;
     }
     .receipt-total {
-        font-size: 0.95rem !important;
-        margin-top: 3px !important;
+        font-size: 0.7rem !important;
+        margin-top: 2px !important;
+        padding-top: 1px !important;
     }
-    
-    /* 4. 操作ボタン・スタンプ・マイク調整 */
-    .stButton button {
-        font-size: 0.9rem !important;
-        min-height: 38px !important;
-        padding: 4px 8px !important;
-    }
+
+    /* マイクエリアの縮小 */
     .mic-container {
-        padding: 5px !important;
+        padding: 4px !important;
         margin-bottom: 4px !important;
     }
-    .mic-container p {
-        font-size: 0.8rem !important;
-        margin-bottom: 2px !important;
+    
+    /* 選択肢ボタンをスリムにしてタップしやすく */
+    .stButton button {
+        padding: 2px 4px !important;
+        font-size: 0.7rem !important;
+        min-height: 26px !important;
     }
-    .equalizer-wave {
-        height: 12px !important;
-    }
+
+    /* スタンプカードの縮小 */
     .stamp-card-box {
-        padding: 4px !important;
-        margin-top: 4px !important;
+        padding: 3px !important;
+        margin-top: 3px !important;
     }
     .stamp-title {
-        font-size: 0.8rem !important;
-        margin-bottom: 3px !important;
+        font-size: 0.6rem !important;
+        margin-bottom: 1px !important;
     }
     .stamp-slot {
-        width: 24px !important;
-        height: 24px !important;
-        font-size: 0.85rem !important;
+        width: 14px !important;
+        height: 14px !important;
+        font-size: 0.5rem !important;
     }
-    .menu-display-card {
-        padding: 6px !important;
-        margin-bottom: 6px !important;
-    }
-    .menu-display-img {
-        max-height: 55px !important;
-    }
-    .menu-display-label {
-        font-size: 0.8rem !important;
+    
+    /* お札画像の縮小 */
+    img.cash-img-btn {
+        max-width: 65px !important;
+        margin: 0 auto !important;
     }
 }
 </style>""", unsafe_allow_html=True)
 
-# --- 5. 永続的なグローバル状態（スタンプ・お名前）の設定 ---
+# --- 4. 永続的な状態の設定 ---
 if "total_stamps" not in st.session_state:
     st.session_state.total_stamps = 0
 if "kid_name" not in st.session_state:
     st.session_state.kid_name = "Guest"
 
-# --- 6. ゲーム内会話状態の設定 ---
+# --- 5. ゲーム内会話状態の設定 ---
 if "step" not in st.session_state:
     st.session_state.step = 1
     st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
@@ -351,8 +455,8 @@ if "step" not in st.session_state:
     st.session_state.p_matched_keyword = ""
     st.session_state.stamp_processed = False
 
-# --- 7. サイドバー設定 (お名前入力欄) ---
-st.sidebar.markdown("### 👤カスタマー情報")
+# --- 6. サイドバー設定 ---
+st.sidebar.markdown("### 👤 カスタマー情報")
 input_name = st.sidebar.text_input("お子さまのお名前 (英語)", value=st.session_state.kid_name)
 if input_name:
     st.session_state.kid_name = input_name
@@ -369,27 +473,18 @@ selected_voice = voice_map[voice_gender]
 bgm_url = "https://archive.org/download/lofi-hiphop-cozy-vibes/Lo-Fi%20Hiphop%20-%20Cozy%20Vibes.mp3"
 st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
-# --- 8. 動的価格のリアルタイム計算 ---
-drink_base_p = DRINK_PRICES.get(st.session_state.ordered_drink, 0.0) if st.session_state.ordered_drink else 0.0
-temp_extra_p = TEMP_PRICES.get(st.session_state.drink_temp, 0.0) if st.session_state.drink_temp else 0.0
-size_extra_p = SIZE_PRICES.get(st.session_state.ordered_size, 0.0) if st.session_state.ordered_size else 0.0
-food_extra_p = FOOD_PRICES.get(st.session_state.ordered_food, 0.0) if st.session_state.ordered_food else 0.0
-
-total_p = drink_base_p + temp_extra_p + size_extra_p + food_extra_p
-
-# --- 9. 画面描画（左右カラムレイアウト） ---
-st.markdown("<p class='game-title'>La Café English Roleplay</p>", unsafe_allow_html=True)
+# --- 7. 画面レイアウト構築 ---
+st.markdown("<p class='game-title'>☕ La Café English Roleplay ☕</p>", unsafe_allow_html=True)
 
 main_col, visual_col = st.columns([1.1, 0.9])
 
 with visual_col:
+    # 左右のカラムが綺麗に分離するようにクラスを適用
+    st.markdown('<div class="column-container">', unsafe_allow_html=True)
+    
     # 1. お姉さんステージ
     active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
-    staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:60px; text-align:center;">👩‍🍳</div>'
-
-    star_shower_html = ""
-    if st.session_state.emotion == "happy":
-        star_shower_html = "<div class='star-shower'><span class='star' style='left:10vw;'>🌟</span><span class='star' style='left:40vw;'>✨</span><span class='star' style='left:70vw;'>🌟</span></div>"
+    staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:50px; text-align:center;">👩‍🍳</div>'
 
     drink_html = ""
     food_html = ""
@@ -398,45 +493,56 @@ with visual_col:
             local_drink_path = item_images.get(st.session_state.ordered_drink, "")
             if os.path.exists(local_drink_path):
                 drink_html = f'<img class="drink-present" src="data:image/png;base64,{get_image_base64(local_drink_path)}">'
-        if st.session_state.ordered_food and st.session_state.ordered_food != "none":
+        if st.session_state.ordered_food:
             local_food_path = item_images.get(st.session_state.ordered_food, "")
             if os.path.exists(local_food_path):
                 food_html = f'<img class="food-present" src="data:image/png;base64,{get_image_base64(local_food_path)}">'
 
-    st.markdown(f"<div class='character-stage'>{staff_html}{drink_html}{food_html}{star_shower_html}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='character-stage'>{staff_html}{drink_html}{food_html}</div>", unsafe_allow_html=True)
 
-    # 2. リアルタイム内訳・金額付きレシート表示
-    drink_disp = f"{st.session_state.ordered_drink.capitalize()}" if st.session_state.ordered_drink else "---"
-    temp_disp = f"{st.session_state.drink_temp.capitalize()}" if st.session_state.drink_temp else "---"
-    size_disp = f"{st.session_state.ordered_size.capitalize()}" if st.session_state.ordered_size else "---"
+    # 2. リアルタイム計算レシート (20ドル札対応の海外インフレ物価計算)
+    # 基本料金
+    drink_prices = {"coffee": 5.0, "tea": 5.5, "latte": 6.0}
+    drink_p = drink_prices.get(st.session_state.ordered_drink, 0.0)
     
-    if st.session_state.ordered_food:
-        if st.session_state.ordered_food == "none":
-            food_disp = "No Food"
-        else:
-            food_disp = f"{st.session_state.ordered_food.capitalize()}"
-    else:
-        food_disp = "---"
+    # トッピング価格
+    temp_p = 1.0 if st.session_state.drink_temp == "iced" else 0.0
+    
+    # サイズ追加料金
+    size_prices = {"small": 0.0, "medium": 1.5, "large": 2.5}
+    size_p = size_prices.get(st.session_state.ordered_size, 0.0)
+    
+    # フード料金
+    food_prices = {"cake": 6.5, "sandwich": 8.5}
+    food_p = food_prices.get(st.session_state.ordered_food, 0.0)
+    
+    total_p = 0.0
+    if st.session_state.ordered_drink:
+        total_p = drink_p + temp_p + size_p + food_p
 
-    place_disp = "Here" if st.session_state.ordered_place == "here" else ("Go" if st.session_state.ordered_place == "go" else "---")
-    payment_disp = st.session_state.ordered_payment_type.capitalize() if st.session_state.ordered_payment_type else "---"
+    drink_disp = st.session_state.ordered_drink.capitalize() if st.session_state.ordered_drink else "---"
+    temp_disp = st.session_state.drink_temp.capitalize() if st.session_state.drink_temp else "---"
+    size_disp = st.session_state.ordered_size.capitalize() if st.session_state.ordered_size else "---"
+    food_disp = st.session_state.ordered_food.capitalize() if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else "---"
+    place_disp = "Here" if st.session_state.ordered_place == "here" else ("To Go" if st.session_state.ordered_place == "go" else "---")
+    payment_disp = st.session_state.ordered_payment_type.upper() if st.session_state.ordered_payment_type else "---"
     
     st.markdown(f"""
     <div class="receipt-memo">
         <div class="receipt-header">📋 {st.session_state.kid_name.upper()}'S RECEIPT</div>
         <div class="receipt-item-container">
-            <div class="receipt-item"><span>🥤 Item:</span> <span>{drink_disp} (${drink_base_p:.2f})</span></div>
-            <div class="receipt-item"><span>🔥 Temp:</span> <span>{temp_disp} (+${temp_extra_p:.2f})</span></div>
-            <div class="receipt-item"><span>📏 Size:</span> <span>{size_disp} (+${size_extra_p:.2f})</span></div>
-            <div class="receipt-item"><span>🍰 Food:</span> <span>{food_disp} (+${food_extra_p:.2f})</span></div>
-            <div class="receipt-item"><span>🏠 Place:</span> <span>{place_disp}</span></div>
-            <div class="receipt-item"><span>💳 Pay:</span> <span>{payment_disp}</span></div>
+            <div class="receipt-item">🥤 {drink_disp} (${drink_p:.2f})</div>
+            <div class="receipt-item">🔥 {temp_disp} (+${temp_p:.2f})</div>
+            <div class="receipt-item">📏 {size_disp} (+${size_p:.2f})</div>
+            <div class="receipt-item">🥪 {food_disp} (+${food_p:.2f})</div>
+            <div class="receipt-item">🏠 {place_disp}</div>
+            <div class="receipt-item">💳 {payment_disp}</div>
         </div>
-        <div class="receipt-total"><span>💰 TOTAL:</span> <span>${total_p:.2f}</span></div>
+        <div class="receipt-total"><span>💰 TOTAL AMOUNT:</span> <span>${total_p:.2f}</span></div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 3. スタンプカード表示
+    # 3. スタンプカード
     stamp_slots_html = ""
     for i in range(1, 11):
         if i <= st.session_state.total_stamps:
@@ -446,13 +552,17 @@ with visual_col:
             
     st.markdown(f"""
     <div class="stamp-card-box">
-        <div class="stamp-title">💮 CAFE STAMP CARD (来店スタンプ)</div>
+        <div class="stamp-title">💮 CUSTOMER STAMP CARD</div>
         <div class="stamp-grid">{stamp_slots_html}</div>
     </div>
     """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with main_col:
-    # 音声再生関数
+    st.markdown('<div class="column-container">', unsafe_allow_html=True)
+    
+    # 音声読み上げロジック
     def play_audio(text, speed, voice_cfg):
         try:
             tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=False)
@@ -469,7 +579,7 @@ with main_col:
         play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
         st.session_state.speak_now = False
 
-    # セリフウィンドウ
+    # セリフウィンドウ（お姉さんのメッセージ）
     st.markdown(f"<div class='speech-window'><div>{st.session_state.current_npc_en}</div><div class='speech-sub-jp'>{st.session_state.current_npc_jp}</div></div>", unsafe_allow_html=True)
 
     user_choice = None
@@ -497,15 +607,16 @@ with main_col:
             st.session_state.pronunciation_status = "perfect" if exact_hit else "good"
         return matched
 
+    # 音声認識＆手動選択フロー
     if st.session_state.step < 7:
-        # マイクコンテナ
+        # マイク入力
         st.markdown('<div class="mic-container">', unsafe_allow_html=True)
-        st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:4px; font-size:1.1rem;'>🎤 声でしゃべって注文してみよう！ (英語)</p>", unsafe_allow_html=True)
-        st.markdown("<div class='equalizer-wave'><div class='wave-bar'></div><div class='wave-bar'></div><div class='wave-bar'></div><div class='wave-bar'></div><div class='wave-bar'></div></div>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#ffd700; font-weight:bold; margin-bottom:1px; font-size:0.8rem;'>🎤 English Speech Action (英語でしゃべる)</p>", unsafe_allow_html=True)
+        st.markdown("<div class='equalizer-wave'><div class='wave-bar'></div><div class='wave-bar'></div><div class='wave-bar'></div><div class='wave-bar'></div></div>", unsafe_allow_html=True)
         
         mic_input = speech_to_text(
-            start_prompt="🔴 録音スタート (おしてしゃべる)",
-            stop_prompt="⏹️ 録音おわり",
+            start_prompt="🔴 PRESS TO SPEAK (おしてしゃべる)",
+            stop_prompt="⏹️ STOP",
             language='en-US',
             use_container_width=True,
             key=f'speech_step_{st.session_state.step}' 
@@ -515,120 +626,80 @@ with main_col:
         if st.session_state.pronunciation_status:
             icon = "🌟 Perfect!" if st.session_state.pronunciation_status == "perfect" else "👍 Good Try!"
             i_class = "pron-perfect" if st.session_state.pronunciation_status == "perfect" else "pron-good"
-            st.markdown(f"<div class='pronunciation-badge-container'><div class='badge-label'>🗣️ {st.session_state.p_heard_text} ➡️ 解釈: {st.session_state.p_matched_keyword}</div><div class='{i_class}'>{icon}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='pronunciation-badge-container'><div class='badge-label'>🗣️ {st.session_state.p_heard_text} ➡️ {st.session_state.p_matched_keyword}</div><div class='{i_class}'>{icon}</div></div>", unsafe_allow_html=True)
 
-        st.markdown("<p style='color:#fff; font-weight:bold; margin-bottom:8px; font-size:1.0rem;'>👇 または英語フレーズを選んでボタンをおしてね！</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#ffffff; font-weight:bold; margin-bottom:3px; font-size:0.75rem;'>👇 Or touch the correct phrase button below:</p>", unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
         keywords = []
         fuzzy_rules = None
 
+        # --- STEP 1: ドリンクの選択 ---
         if st.session_state.step == 1:
             keywords = ["coffee", "latte", "tea"]
             
-            # 1. コーヒー
-            with col1:
-                if os.path.exists(item_images["coffee"]):
-                    b64_coffee = get_image_base64(item_images["coffee"])
-                    st.markdown(f"""
-                    <div class="menu-display-card">
-                        <img src="data:image/png;base64,{b64_coffee}" class="menu-display-img">
-                        <div class="menu-display-label">Coffee ($5.00)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.button("☕️ Coffee, please.", key='btn_coffee_phrase', use_container_width=True)
-                if st.session_state.get('btn_coffee_phrase'):
-                    user_choice = "Coffee, please."
-            
-            # 2. ラテ
-            with col2:
-                if os.path.exists(item_images["latte"]):
-                    b64_latte = get_image_base64(item_images["latte"])
-                    st.markdown(f"""
-                    <div class="menu-display-card">
-                        <img src="data:image/png;base64,{b64_latte}" class="menu-display-img">
-                        <div class="menu-display-label">Latte ($6.00)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.button("🥛 Latte, please.", key='btn_latte_phrase', use_container_width=True)
-                if st.session_state.get('btn_latte_phrase'):
-                    user_choice = "Latte, please."
-            
-            # 3. 紅茶
-            with col3:
-                if os.path.exists(item_images["tea"]):
-                    b64_tea = get_image_base64(item_images["tea"])
-                    st.markdown(f"""
-                    <div class="menu-display-card">
-                        <img src="data:image/png;base64,{b64_tea}" class="menu-display-img">
-                        <div class="menu-display-label">Tea ($5.50)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.button("🍵 Tea, please.", key='btn_tea_phrase', use_container_width=True)
-                if st.session_state.get('btn_tea_phrase'):
-                    user_choice = "Tea, please."
+            # メニュー看板（見るだけのビジュアル要素）
+            menu_col1, menu_col2, menu_col3 = st.columns(3)
+            with menu_col1:
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$5.00</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], width=50)
+            with menu_col2:
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$6.00</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["latte"]): st.image(item_images["latte"], width=50)
+            with menu_col3:
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$5.50</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["tea"]): st.image(item_images["tea"], width=50)
 
+            # 英語フレーズ選択ボタン
+            with col1:
+                if st.button("☕️ Coffee, please.", key='btn_coffee', use_container_width=True): user_choice = "Coffee, please."
+            with col2:
+                if st.button("🥛 Latte, please.", key='btn_latte', use_container_width=True): user_choice = "Latte, please."
+            with col3:
+                if st.button("🍵 Tea, please.", key='btn_tea', use_container_width=True): user_choice = "Tea, please."
+
+        # --- STEP 2: 温度の選択 ---
         elif st.session_state.step == 2:
             keywords = ["hot", "iced"]
             fuzzy_rules = {"hot": ["thought", "hat", "heart", "pot"], "iced": ["ice", "eyes", "nice"]}
             with col1:
-                if st.button("🔥 Hot, please. (+$0.00)", key='btn_hot', use_container_width=True): user_choice = "Hot, please."
+                if st.button("🔥 Hot, please.", key='btn_hot', use_container_width=True): user_choice = "Hot, please."
             with col2:
-                if st.button("❄️ Iced, please. (+$1.00)", key='btn_iced', use_container_width=True): user_choice = "Iced, please."
+                if st.button("❄️ Iced, please.", key='btn_iced', use_container_width=True): user_choice = "Iced, please."
 
+        # --- STEP 3: サイズの選択 ---
         elif st.session_state.step == 3:
             keywords = ["small", "medium", "large"]
             with col1:
-                if st.button("🟢 Small, please. (+$0.00)", key='btn_small', use_container_width=True): user_choice = "Small, please."
+                if st.button("🟢 Small, please.", key='btn_small', use_container_width=True): user_choice = "Small, please."
             with col2:
-                if st.button("🟡 Medium, please. (+$1.50)", key='btn_medium', use_container_width=True): user_choice = "Medium, please."
+                if st.button("🟡 Medium, please.", key='btn_medium', use_container_width=True): user_choice = "Medium, please."
             with col3:
-                if st.button("🔴 Large, please. (+$2.50)", key='btn_large', use_container_width=True): user_choice = "Large, please."
+                if st.button("🔴 Large, please.", key='btn_large', use_container_width=True): user_choice = "Large, please."
 
+        # --- STEP 4: フードの追加選択 ---
         elif st.session_state.step == 4:
-            keywords = ["cake", "sandwich", "none"]
-            fuzzy_rules = {"cake": ["chocolate cake", "sweet"], "sandwich": ["club sandwich", "bread"], "none": ["no food", "nothing", "no thanks"]}
+            keywords = ["cake", "sandwich", "no"]
             
-            # 1. ケーキ
+            # フード看板
+            menu_col1, menu_col2, menu_col3 = st.columns(3)
+            with menu_col1:
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>+$6.50</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["cake"]): st.image(item_images["cake"], width=50)
+            with menu_col2:
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥪 Sandwich</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>+$8.50</p></div>", unsafe_allow_html=True)
+                if os.path.exists(item_images["sandwich"]): st.image(item_images["sandwich"], width=50)
+            with menu_col3:
+                st.markdown("<div class='menu-card'><p class='menu-card-title'>❌ No Food</p><p style='color:#aaa; font-size:0.7rem; margin:0;'>$0.00</p></div>", unsafe_allow_html=True)
+
             with col1:
-                if os.path.exists(item_images["cake"]):
-                    b64_cake = get_image_base64(item_images["cake"])
-                    st.markdown(f"""
-                    <div class="menu-display-card">
-                        <img src="data:image/png;base64,{b64_cake}" class="menu-display-img">
-                        <div class="menu-display-label">Cake (+$6.50)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.button("🍰 Cake, please.", key='btn_cake_phrase', use_container_width=True)
-                if st.session_state.get('btn_cake_phrase'):
-                    user_choice = "Chocolate cake, please."
-            
-            # 2. サンドイッチ
+                if st.button("🍰 Cake, please.", key='btn_cake', use_container_width=True): user_choice = "Cake, please."
             with col2:
-                if os.path.exists(item_images["sandwich"]):
-                    b64_sandwich = get_image_base64(item_images["sandwich"])
-                    st.markdown(f"""
-                    <div class="menu-display-card">
-                        <img src="data:image/png;base64,{b64_sandwich}" class="menu-display-img">
-                        <div class="menu-display-label">Sandwich (+$8.50)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.button("🥪 Sandwich, please.", key='btn_sandwich_phrase', use_container_width=True)
-                if st.session_state.get('btn_sandwich_phrase'):
-                    user_choice = "Sandwich, please."
-            
-            # 3. フードなし
+                if st.button("🥪 Sandwich, please.", key='btn_sandwich', use_container_width=True): user_choice = "Sandwich, please."
             with col3:
-                st.markdown(f"""
-                <div class="menu-display-card" style="min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                    <div style="font-size: 2.2rem; margin-bottom: 5px;">❌</div>
-                    <div class="menu-display-label">No Food</div>
-                </div>
-                """, unsafe_allow_html=True)
-                st.button("No food, thank you.", key='btn_no_food_phrase', use_container_width=True)
-                if st.session_state.get('btn_no_food_phrase'):
-                    user_choice = "No food, thank you."
+                if st.button("❌ No, thank you.", key='btn_no_food', use_container_width=True): user_choice = "No, thank you."
                 
+        # --- STEP 5: 店内 or お持ち帰り ---
         elif st.session_state.step == 5:
             keywords = ["here", "go"]
             with col1:
@@ -636,86 +707,50 @@ with main_col:
             with col2:
                 if st.button("🛍️ To go, please.", key='btn_go', use_container_width=True): user_choice = "To go, please."
                 
+        # --- STEP 6: お会計（お札タップまたはマイクでお支払い） ---
         elif st.session_state.step == 6:
-            # --- お札画像ボタンお会計システム ---
             keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
             fuzzy_rules = {"5": ["five dollars"], "10": ["ten dollars"], "20": ["twenty dollars"]}
             
-            # --- 5ドル札の配置 ---
+            # 手持ちの現金（5ドル、10ドル、20ドル）が足りるかチェックし、足りない場合はグレーアウト表示
+            st.markdown("<p style='color:#ffd700; font-weight:bold; font-size:0.75rem; text-align:center;'>💳 Tap cash to pay (お札をタップして支払う)</p>", unsafe_allow_html=True)
+            
             with col1:
                 if total_p <= 5.0:
                     if os.path.exists(cash_images["5"]):
-                        b64_5 = get_image_base64(cash_images["5"])
-                        st.markdown(f"""
-                        <div class="cash-image-button-container">
-                            <img src="data:image/png;base64,{b64_5}" class="cash-bg-img">
-                            <div class="transparent-btn-overlay">
-                        """, unsafe_allow_html=True)
-                        if st.button("Pay $5.00", key='btn_pay_5_overlay', use_container_width=True): 
-                            user_choice = "Here is 5 dollars."
-                        st.markdown("</div></div>", unsafe_allow_html=True)
+                        st.image(cash_images["5"], use_container_width=True, output_format="PNG")
+                        if st.button("👉 Give $5.00", key='btn_img_pay_5', use_container_width=True): user_choice = "Here is 5 dollars."
                     else:
-                        if st.button("💵 Here is $5.00", key='btn_pay_5', use_container_width=True): 
-                            user_choice = "Here is 5 dollars."
+                        if st.button("💵 Here is $5.00", key='btn_pay_5', use_container_width=True): user_choice = "Here is 5 dollars."
                 else:
+                    st.markdown("<div style='text-align:center; opacity:0.35;'><span style='font-size:0.6rem; color:#fff;'>Not Enough</span></div>", unsafe_allow_html=True)
                     if os.path.exists(cash_images["5"]):
-                        b64_5 = get_image_base64(cash_images["5"])
-                        st.markdown(f"""
-                        <div class="cash-disabled-container">
-                            <img src="data:image/png;base64,{b64_5}" class="cash-bg-img">
-                        </div>
-                        <p style="color:#ff4444; text-align:center; font-size:0.9rem; font-weight:bold; margin:4px 0 0 0;">❌ 足りません</p>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown("<div class='cash-btn-box' style='opacity:0.35; background:#ccc; border-color:#999; color:#555;'>❌ $5.00 (足りません)</div>", unsafe_allow_html=True)
+                        st.image(cash_images["5"], use_container_width=True, output_format="PNG")
+                    st.button("💵 $5.00 (足りません)", key='btn_pay_5_dis', disabled=True, use_container_width=True)
             
-            # --- 10ドル札の配置 ---
             with col2:
                 if total_p <= 10.0:
                     if os.path.exists(cash_images["10"]):
-                        b64_10 = get_image_base64(cash_images["10"])
-                        st.markdown(f"""
-                        <div class="cash-image-button-container">
-                            <img src="data:image/png;base64,{b64_10}" class="cash-bg-img">
-                            <div class="transparent-btn-overlay">
-                        """, unsafe_allow_html=True)
-                        if st.button("Pay $10.00", key='btn_pay_10_overlay', use_container_width=True): 
-                            user_choice = "Here is 10 dollars."
-                        st.markdown("</div></div>", unsafe_allow_html=True)
+                        st.image(cash_images["10"], use_container_width=True, output_format="PNG")
+                        if st.button("👉 Give $10.00", key='btn_img_pay_10', use_container_width=True): user_choice = "Here is 10 dollars."
                     else:
-                        if st.button("💵 Here is $10.00", key='btn_pay_10', use_container_width=True): 
-                            user_choice = "Here is 10 dollars."
+                        if st.button("💵 Here is $10.00", key='btn_pay_10', use_container_width=True): user_choice = "Here is 10 dollars."
                 else:
+                    st.markdown("<div style='text-align:center; opacity:0.35;'><span style='font-size:0.6rem; color:#fff;'>Not Enough</span></div>", unsafe_allow_html=True)
                     if os.path.exists(cash_images["10"]):
-                        b64_10 = get_image_base64(cash_images["10"])
-                        st.markdown(f"""
-                        <div class="cash-disabled-container">
-                            <img src="data:image/png;base64,{b64_10}" class="cash-bg-img">
-                        </div>
-                        <p style="color:#ff4444; text-align:center; font-size:0.9rem; font-weight:bold; margin:4px 0 0 0;">❌ 足りません</p>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown("<div class='cash-btn-box' style='opacity:0.35; background:#ccc; border-color:#999; color:#555;'>❌ $10.00 (足りません)</div>", unsafe_allow_html=True)
+                        st.image(cash_images["10"], use_container_width=True, output_format="PNG")
+                    st.button("💵 $10.00 (足りません)", key='btn_pay_10_dis', disabled=True, use_container_width=True)
             
-            # --- 20ドル札の配置 ---
             with col3:
+                # 20ドル札は最高金額なので常に支払いに利用可能
                 if os.path.exists(cash_images["20"]):
-                    b64_20 = get_image_base64(cash_images["20"])
-                    st.markdown(f"""
-                    <div class="cash-image-button-container">
-                        <img src="data:image/png;base64,{b64_20}" class="cash-bg-img">
-                        <div class="transparent-btn-overlay">
-                    """, unsafe_allow_html=True)
-                    if st.button("Pay $20.00", key='btn_pay_20_overlay', use_container_width=True): 
-                        user_choice = "Here is 20 dollars."
-                    st.markdown("</div></div>", unsafe_allow_html=True)
+                    st.image(cash_images["20"], use_container_width=True, output_format="PNG")
+                    if st.button("👉 Give $20.00", key='btn_img_pay_20', use_container_width=True): user_choice = "Here is 20 dollars."
                 else:
-                    if st.button("💵 Here is $20.00", key='btn_pay_20', use_container_width=True): 
-                        user_choice = "Here is 20 dollars."
+                    if st.button("💵 Here is $20.00", key='btn_pay_20', use_container_width=True): user_choice = "Here is 20 dollars."
 
-            st.markdown("<div style='margin-top:15px;'></div>", unsafe_allow_html=True)
-            if st.button("💳 By card, please.", key='btn_pay_card_alt', use_container_width=True): 
-                user_choice = "Card, please."
+            st.markdown("<div style='margin-top:5px;'></div>", unsafe_allow_html=True)
+            if st.button("💳 Pay by card, please.", key='btn_pay_card_alt', use_container_width=True): user_choice = "Card, please."
 
         user_typed = st.chat_input("Or type here...")
         
@@ -727,7 +762,6 @@ with main_col:
         if "prevent_overlap" not in st.session_state:
             st.session_state.prevent_overlap = {"step": 0, "text": ""}
 
-        # --- 10. ダイアログ選択後の次のステップ切り替え処理 ---
         if raw_input_text and (st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != raw_input_text):
             matched_key = fuzzy_match(raw_input_text, keywords, fuzzy_rules)
             st.session_state.prevent_overlap["step"] = st.session_state.step
@@ -735,7 +769,7 @@ with main_col:
 
             if matched_key:
                 import time
-                time.sleep(1.0)
+                time.sleep(0.5)
                 st.session_state.pronunciation_status = None 
                 
                 if st.session_state.step == 1:
@@ -751,26 +785,34 @@ with main_col:
                     st.session_state.step = 3
                 elif st.session_state.step == 3:
                     st.session_state.ordered_size = matched_key
-                    st.session_state.current_npc_en = "Okay! Would you like to add some delicious food today? We have cake and sandwiches!"
-                    st.session_state.current_npc_jp = "かしこまりました！美味しそうなフード（ケーキやサンドイッチ）もご一緒にいかがですか？"
-                    st.session_state.step = 4
+                    st.session_state.has_food_event = random.choice([True, False])
+                    # ランダムイベントとして、お姉さんがフードのおすすめを聞くか判断
+                    if st.session_state.has_food_event:
+                        st.session_state.current_npc_en = "Okay! By the way, would you like a chocolate cake or a club sandwich with that today?"
+                        st.session_state.current_npc_jp = "かしこまりました！よろしければ、ケーキやクラブサンドイッチはいかがですか？"
+                        st.session_state.step = 4
+                    else:
+                        st.session_state.ordered_food = "no"
+                        st.session_state.current_npc_en = "Okay! Is that for here or to go?"
+                        st.session_state.current_npc_jp = "店内で召し上がりますか？それともお持ち帰りですか？"
+                        st.session_state.step = 5
                 elif st.session_state.step == 4:
-                    st.session_state.ordered_food = matched_key
+                    if matched_key in ["cake", "sandwich"]:
+                        st.session_state.ordered_food = matched_key
+                    else:
+                        st.session_state.ordered_food = "no"
                     st.session_state.current_npc_en = "Got it! Now, is that for here or to go?"
                     st.session_state.current_npc_jp = "かしこまりました！では、店内で召し上がりますか？お持ち帰りですか？"
                     st.session_state.step = 5
                 elif st.session_state.step == 5:
                     st.session_state.ordered_place = matched_key
-                    next_total = drink_base_p + temp_extra_p + size_extra_p + FOOD_PRICES.get(st.session_state.ordered_food, 0.0)
-                    st.session_state.current_npc_en = f"Perfect! Your total is ${next_total:.2f}. How would you like to pay?"
-                    st.session_state.current_npc_jp = f"合計で${next_total:.2f}です。お支払い方法（現金のお札の額、またはカード）を選んでね！"
+                    st.session_state.current_npc_en = f"Perfect! Your total is ${total_p:.2f}. How would you like to pay?"
+                    st.session_state.current_npc_jp = f"合計で${total_p:.2f}です。お支払い方法（現金のお札の額、またはカード）を選んでね！"
                     st.session_state.step = 6
                 elif st.session_state.step == 6:
-                    food_msg = ""
-                    food_msg_jp = ""
-                    if st.session_state.ordered_food and st.session_state.ordered_food != "none":
-                        food_msg = f" and {st.session_state.ordered_food}"
-                        food_msg_jp = f"と{st.session_state.ordered_food == 'cake' and 'ケーキ' or 'サンドイッチ'}"
+                    # お釣りのリアルタイム計算とお姉さんの手渡しメッセージ演出
+                    food_msg = f" and {st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
+                    food_msg_jp = f"と{st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
                     
                     if matched_key in ["5", "five"]:
                         st.session_state.ordered_payment_type = "cash ($5)"
@@ -788,12 +830,12 @@ with main_col:
                     st.session_state.change_amount = st.session_state.paid_amount - total_p
                     
                     if st.session_state.ordered_payment_type.startswith("cash"):
-                        if st.session_state.change_amount > 0.01: 
+                        if st.session_state.change_amount > 0:
                             st.session_state.current_npc_en = f"Thank you so much! Here is your change, ${st.session_state.change_amount:.2f}. And here is your drink{food_msg}. Enjoy!"
                             st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文のドリンク{food_msg_jp}もどうぞ。ごゆっくり！"
                         else:
                             st.session_state.current_npc_en = f"Thank you for the exact amount! Here is your drink{food_msg}. Enjoy your time!"
-                            st.session_state.current_npc_jp = f"ちょうどのお支払いでありがとうございます！ご注文のドリンク{food_msg_jp}です。ごゆっくり！"
+                            st.session_state.current_npc_jp = f"ちょうどのお支払いでありがとうございます！ご注文 of ドリンク{food_msg_jp}です。ごゆっくり！"
                     else:
                         st.session_state.current_npc_en = f"Thank you so much! Payment approved. Here is your drink{food_msg}. Enjoy your time!"
                         st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文のドリンク{food_msg_jp}になります。ごゆっくり！"
@@ -804,33 +846,38 @@ with main_col:
                 st.rerun()
             else:
                 import time
-                time.sleep(1.0)
+                time.sleep(0.5)
                 st.session_state.pronunciation_status = None 
                 st.session_state.current_npc_en = "Sorry, could you say that again?"
                 st.session_state.current_npc_jp = "すみません、もう一度おっしゃっていただけますか？"
                 st.session_state.speak_now = True
                 st.rerun()
     else:
-        # --- 11. クリア時のスタンプ加算とアワード表示処理 ---
+        # --- 8. クリアおめでとう・スタンプ獲得とアワードの表示 ---
         if not st.session_state.stamp_processed:
             st.session_state.total_stamps += 1
             st.session_state.stamp_processed = True
             st.rerun()
 
+        # 安全なアニメーション演出（バグを出すHTMLコードは使わず、安全な標準エフェクトを使用）
         st.balloons()
-        st.success("🎉 Order Completed!")
+        st.snow()
+        st.success("🎉 Good Job! Roleplay Completed!")
 
+        # 会員証（アワードカード）の表示
         stamps = st.session_state.total_stamps
         if stamps >= 10:
-            st.markdown(f"""<div class='award-card'><div class='award-title'>👑 GRAND CAFE MASTER 👑</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>👑🏆👑</div><p style='margin:0; font-size:1.1rem; color:#ffd700; font-weight:bold;'>あなたは最高峰のカフェマスターです！</p></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class='award-card'><div class='award-title'>👑 GRAND CAFE MASTER 👑</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>👑🏆👑</div><p style='margin:0; font-size:0.8rem; color:#ffd700;'>あなたは最高峰のカフェマスターです！</p></div>""", unsafe_allow_html=True)
         elif stamps >= 5:
-            st.markdown(f"""<div class='award-card' style='border-color:#ff9900;'><div class='award-title' style='color:#ff9900;'>🥇 REGULAR VIP MEMBER 🥇</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥇✨🎖️</div><p style='margin:0; font-size:1.1rem; color:#ff9900; font-weight:bold;'>いつもありがとう！常連VIP会員証</p></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class='award-card' style='border-color:#ff9900;'><div class='award-title' style='color:#ff9900;'>🥇 REGULAR VIP MEMBER 🥇</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥇✨🎖️</div><p style='margin:0; font-size:0.8rem; color:#ff9900;'>いつもありがとう！常連VIP会員証</p></div>""", unsafe_allow_html=True)
         elif stamps >= 3:
-            st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p style='margin:0; font-size:1.1rem; color:#b5733d; font-weight:bold;'>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p style='margin:0; font-size:0.8rem; color:#b5733d;'>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
 
-        if st.button("Play Again (もういちど遊ぶ)", key='btn_play_again_action', use_container_width=True):
+        if st.button("🔄 Play Again (もういちど遊ぶ)", key='btn_play_again_action', use_container_width=True):
             keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_food", "ordered_place", "ordered_payment_type", "paid_amount", "change_amount", "has_food_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed"]
             for key in keys_to_reset:
                 if key in st.session_state:
                     del st.session_state[key]
             st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
