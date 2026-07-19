@@ -23,7 +23,7 @@ def get_image_base64(path):
 bg_path = "images/bg.jpg"       
 staff_normal_path = "images/staff.png" 
 staff_happy_path = "images/staff_happy.png" 
-stamp_img_path = "images/stamp.png"  # 新しいカスタムスタンプ画像
+stamp_img_path = "images/stamp.png"  
 
 item_images = {
     "coffee": "images/coffee.png",
@@ -34,7 +34,6 @@ item_images = {
 }
 
 cash_images = {
-    "5": "images/cash_5.png",
     "10": "images/cash_10.png",
     "20": "images/cash_20.png"
 }
@@ -46,7 +45,7 @@ stamp_base64 = get_image_base64(stamp_img_path)
 
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #1e120c;"
 
-# --- 3. デザインCSS（PC・タブレット向け最適化版） ---
+# --- 3. デザインCSS ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
@@ -119,7 +118,6 @@ st.markdown("""<style>
     border-top: 1px dashed rgba(215, 196, 158, 0.4); 
     padding-top: 8px; 
 }
-/* お財布ボードのデザイン */
 .wallet-box {
     background-color: #2e1c0c;
     border: 3px solid #ff9900;
@@ -142,7 +140,6 @@ st.markdown("""<style>
     gap: 15px;
     font-size: 0.95rem;
 }
-/* レシートボードのデザイン */
 .receipt-box { 
     background-color: #fffef2; 
     border: 2px solid #ccc; 
@@ -171,7 +168,6 @@ st.markdown("""<style>
     display: flex; 
     justify-content: space-between; 
 }
-/* スタンプカードのデザイン */
 .stamp-card-box { 
     background: #fffef8; 
     border: 3px solid #8b5a2b; 
@@ -270,18 +266,21 @@ if "total_stamps" not in st.session_state:
 if "kid_name" not in st.session_state:
     st.session_state.kid_name = "Guest"
 
-# --- 5. 【新規】ランダムお財布システム初期化 ---
+# --- 5. 【20ドル札復活＆手持ち上限調整システム】 ---
 def init_random_wallet():
-    # 5ドル札(1〜2枚), 10ドル札(0〜2枚), 20ドル札(0~1枚)をランダムに支給
-    st.session_state.wallet_5 = random.randint(1, 2)
-    st.session_state.wallet_10 = random.randint(0, 2)
-    st.session_state.wallet_20 = random.choice([0, 1])
-    # 稀に全部0~1で詰まないよう、最低合計額が5ドル以上になる安全設計
+    # 今日のおさいふの総額をピッタリ「$20」に固定（20ドル札1枚 か 10ドル札2枚）
+    st.session_state.wallet_10 = 0
+    st.session_state.wallet_20 = 0
+    
+    if random.choice([True, False]):
+        st.session_state.wallet_20 = 1
+    else:
+        st.session_state.wallet_10 = 2
 
-if "wallet_5" not in st.session_state:
+if "wallet_10" not in st.session_state:
     init_random_wallet()
 
-wallet_total = (st.session_state.wallet_5 * 5) + (st.session_state.wallet_10 * 10) + (st.session_state.wallet_20 * 20)
+wallet_total = (st.session_state.wallet_10 * 10) + (st.session_state.wallet_20 * 20)
 
 # --- 6. ゲーム内会話状態の設定 ---
 if "step" not in st.session_state:
@@ -328,7 +327,6 @@ st.markdown("<p class='game-title'>☕ La Café English Roleplay ☕</p>", unsaf
 main_col, visual_col = st.columns([1.2, 0.8])
 
 with visual_col:
-    # お姉さんステージ
     active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
     staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:80px; text-align:center;">👩‍🍳</div>'
 
@@ -346,25 +344,24 @@ with visual_col:
 
     st.markdown(f"<div class='character-stage'>{staff_html}{drink_html}{food_html}</div>", unsafe_allow_html=True)
 
-    # 👛 【新機能】今日のおさいふ表示ボード
+    # 👛 今日のおさいふ表示ボード（20ドル対応版）
     st.markdown(f"""
     <div class="wallet-box">
         <div class="wallet-title"><span>👛 MY WALLET (きょうのおさいふ)</span> <span>Total: ${wallet_total:.2f}</span></div>
         <div class="wallet-row">
-            <span>💵 $5.00 × <b>{st.session_state.wallet_5}</b></span>
             <span>💵 $10.00 × <b>{st.session_state.wallet_10}</b></span>
             <span>💵 $20.00 × <b>{st.session_state.wallet_20}</b></span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # リアルタイム計算レシート
-    drink_prices = {"coffee": 5.0, "tea": 5.5, "latte": 6.0}
+    # 【超高級価格調整】トッピング全部載せで$20をギリギリ超えるスレスレ設定
+    drink_prices = {"coffee": 7.5, "tea": 7.5, "latte": 8.5}
     drink_p = drink_prices.get(st.session_state.ordered_drink, 0.0)
-    temp_p = 1.0 if st.session_state.drink_temp == "iced" else 0.0
-    size_prices = {"small": 0.0, "medium": 1.5, "large": 2.5}
+    temp_p = 0.5 if st.session_state.drink_temp == "iced" else 0.0
+    size_prices = {"small": 0.0, "medium": 2.0, "large": 3.5}
     size_p = size_prices.get(st.session_state.ordered_size, 0.0)
-    food_prices = {"cake": 6.5, "sandwich": 8.5}
+    food_prices = {"cake": 8.5, "sandwich": 9.0}
     food_p = food_prices.get(st.session_state.ordered_food, 0.0)
     
     total_p = 0.0
@@ -391,15 +388,13 @@ with visual_col:
     </div>
     """, unsafe_allow_html=True)
 
-    # 💮 【新機能】画像スタンプカード
+    # 画像スタンプカード
     stamp_slots_html = ""
     for i in range(1, 11):
         if i <= st.session_state.total_stamps:
             if stamp_base64:
-                # 生成したスタンプ画像を埋め込む
                 stamp_slots_html += f"<div class='stamp-slot stamp-active'><img class='stamp-img' src='data:image/png;base64,{stamp_base64}'></div>"
             else:
-                # 画像がない時のセーフティ表示
                 stamp_slots_html += "<div class='stamp-slot stamp-active'>☕</div>"
         else:
             stamp_slots_html += f"<div class='stamp-slot'>{i}</div>"
@@ -476,13 +471,13 @@ with main_col:
             keywords = ["coffee", "latte", "tea"]
             menu_col1, menu_col2, menu_col3 = st.columns(3)
             with menu_col1:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>$5.00</p></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p></div>", unsafe_allow_html=True)
                 if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
             with menu_col2:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>$6.00</p></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p></div>", unsafe_allow_html=True)
                 if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
             with menu_col3:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>$5.50</p></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>", unsafe_allow_html=True)
                 if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
 
             with col1:
@@ -498,25 +493,25 @@ with main_col:
             with col1:
                 if st.button("🔥 Hot, please.", key='b_ht', use_container_width=True): user_choice = "hot"
             with col2:
-                if st.button("❄️ Iced, please.", key='b_ic', use_container_width=True): user_choice = "iced"
+                if st.button(f"❄️ Iced, please. (+${temp_p:.2f})", key='b_ic', use_container_width=True): user_choice = "iced"
 
         elif st.session_state.step == 3:
             keywords = ["small", "medium", "large"]
             with col1:
                 if st.button("🟢 Small, please.", key='b_sm', use_container_width=True): user_choice = "small"
             with col2:
-                if st.button("🟡 Medium, please.", key='b_md', use_container_width=True): user_choice = "medium"
+                if st.button(f"🟡 Medium, please. (+${size_prices['medium']:.2f})", key='b_md', use_container_width=True): user_choice = "medium"
             with col3:
-                if st.button("🔴 Large, please.", key='b_lg', use_container_width=True): user_choice = "large"
+                if st.button(f"🔴 Large, please. (+${size_prices['large']:.2f})", key='b_lg', use_container_width=True): user_choice = "large"
 
         elif st.session_state.step == 4:
             keywords = ["cake", "sandwich", "no"]
             menu_col1, menu_col2, menu_col3 = st.columns(3)
             with menu_col1:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#ffd700; font-weight:bold;'>+$6.50</p></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['cake']:.2f}</p></div>", unsafe_allow_html=True)
                 if os.path.exists(item_images["cake"]): st.image(item_images["cake"], use_container_width=True)
             with menu_col2:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>🥪 Sandwich</p><p style='color:#ffd700; font-weight:bold;'>+$8.50</p></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🥪 Sandwich</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['sandwich']:.2f}</p></div>", unsafe_allow_html=True)
                 if os.path.exists(item_images["sandwich"]): st.image(item_images["sandwich"], use_container_width=True)
             with menu_col3:
                 st.markdown("<div class='menu-card'><p class='menu-card-title'>❌ No Food</p><p style='color:#aaa;'>$0.00</p></div>", unsafe_allow_html=True)
@@ -536,41 +531,36 @@ with main_col:
                 if st.button("🛍️ To go, please.", key='b_tg', use_container_width=True): user_choice = "go"
                 
         elif st.session_state.step == 6:
-            keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
+            keywords = ["10", "20", "ten", "twenty", "card"]
             
-            # 👛 お財布と合計金額に基づいた動的な支払いチェック
-            # お財布の所持数が0枚、または所持していても1枚の額面が合計に足りない場合はボタンが無効化されます。
-            with col1:
-                can_pay_5 = (st.session_state.wallet_5 > 0) and (5.0 >= total_p)
-                if os.path.exists(cash_images["5"]):
-                    st.image(cash_images["5"], use_container_width=True)
-                if st.button("💵 Give $5.00", key='p_5', disabled=not can_pay_5, use_container_width=True): 
-                    user_choice = "5"
-                if not can_pay_5:
-                    st.caption("※お財布にないか、金額が足りません")
-            
-            with col2:
+            pay_col1, pay_col2 = st.columns(2)
+            with pay_col1:
+                # 10ドル札を1枚以上持っていて、かつ支払額が10ドル以下のときだけ有効
                 can_pay_10 = (st.session_state.wallet_10 > 0) and (10.0 >= total_p)
-                if os.path.exists(cash_images["10"]):
+                if os.path.exists(cash_images.get("10", "")):
                     st.image(cash_images["10"], use_container_width=True)
                 if st.button("💵 Give $10.00", key='p_10', disabled=not can_pay_10, use_container_width=True): 
                     user_choice = "10"
                 if not can_pay_10:
-                    st.caption("※お財布にないか、金額が足りません")
+                    st.caption("※手持ちがないか金額不足")
             
-            with col3:
+            with pay_col2:
+                # 20ドル札を1枚以上持っていて、かつ支払額が20ドル以下のときだけ有効
                 can_pay_20 = (st.session_state.wallet_20 > 0) and (20.0 >= total_p)
-                if os.path.exists(cash_images["20"]):
+                if os.path.exists(cash_images.get("20", "")):
                     st.image(cash_images["20"], use_container_width=True)
                 if st.button("💵 Give $20.00", key='p_20', disabled=not can_pay_20, use_container_width=True): 
                     user_choice = "20"
                 if not can_pay_20:
-                    st.caption("※お財布にないか、金額が足りません")
+                    st.caption("※手持ちがないか金額不足")
 
             st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
-            # 現金が一切足りなくて詰んだ時のセーフティ決済手段としてカードを残す
             if st.button("💳 Pay by card, please. (カードで払う)", key='b_card', use_container_width=True): 
                 user_choice = "card"
+
+            # 20ドルまたは10ドルの手持ちを超えてしまい、現金で支払えない場合の警告
+            if not can_pay_10 and not can_pay_20:
+                st.error("⚠️ Oh no! お財布の現金（最大$20）が足りないみたい！カードで払うか、次は合計を計算しながら注文してみてね！")
 
         user_typed = st.chat_input("Or type here...")
         raw_input_text = mic_input or user_choice or user_typed
@@ -614,7 +604,7 @@ with main_col:
                 elif st.session_state.step == 4:
                     st.session_state.ordered_food = matched_key if matched_key in ["cake", "sandwich"] else "no"
                     st.session_state.current_npc_en = "Got it! Now, is that for here or to go?"
-                    st.session_state.current_npc_jp = "かしこばりました！では、店内で召し上がりますか？お持ち帰りですか？"
+                    st.session_state.current_npc_jp = "かしこまりました！では、店内で召し上がりますか？お持ち帰りですか？"
                     st.session_state.step = 5
                 elif st.session_state.step == 5:
                     st.session_state.ordered_place = matched_key
@@ -625,11 +615,7 @@ with main_col:
                     food_msg = f" and {st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
                     food_msg_jp = f"と{st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
                     
-                    if matched_key in ["5", "five"]:
-                        st.session_state.ordered_payment_type = "cash ($5)"
-                        st.session_state.paid_amount = 5.0
-                        st.session_state.wallet_5 -= 1
-                    elif matched_key in ["10", "ten"]:
+                    if matched_key in ["10", "ten"]:
                         st.session_state.ordered_payment_type = "cash ($10)"
                         st.session_state.paid_amount = 10.0
                         st.session_state.wallet_10 -= 1
@@ -688,5 +674,5 @@ with main_col:
             for key in keys_to_reset:
                 if key in st.session_state:
                     del st.session_state[key]
-            init_random_wallet() # お財布を新しくランダムシャッフル
+            init_random_wallet() 
             st.rerun()
