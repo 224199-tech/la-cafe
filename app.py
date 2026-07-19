@@ -61,24 +61,32 @@ st.markdown("""<style>
     color: #ffd700; 
     text-align: center; 
     font-family: 'Comic Sans MS', sans-serif; 
-    font-size: 2.5rem; 
+    font-size: 2.8rem; 
     font-weight: bold; 
     text-shadow: 3px 3px 6px rgba(0,0,0,0.9); 
-    margin-bottom: 20px; 
+    margin-bottom: 10px; 
 }
-.mode-select-box {
-    background: rgba(46, 28, 12, 0.9);
-    border: 3px solid #ffd700;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 20px;
+.game-subtitle {
+    color: #ffd700;
+    text-align: center;
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+.home-container {
+    background: rgba(27, 18, 12, 0.95);
+    border: 4px solid #ffd700;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 700px;
+    margin: 0 auto;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.6);
     text-align: center;
 }
-.mode-select-title {
-    color: #ffd700;
-    font-size: 1.2rem;
+.home-welcome {
+    color: #ffffff;
+    font-size: 1.6rem;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 25px;
 }
 .character-stage { 
     display: flex; 
@@ -280,6 +288,8 @@ if "total_stamps" not in st.session_state:
     st.session_state.total_stamps = 0
 if "kid_name" not in st.session_state:
     st.session_state.kid_name = "Guest"
+if "is_game_started" not in st.session_state:
+    st.session_state.is_game_started = False
 if "input_mode" not in st.session_state:
     st.session_state.input_mode = "🎤 Voice (音声)"
 
@@ -342,390 +352,412 @@ selected_voice = voice_map[voice_gender]
 bgm_url = "https://archive.org/download/lofi-hiphop-cozy-vibes/Lo-Fi%20Hiphop%20-%20Cozy%20Vibes.mp3"
 st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
-# --- 8. 画面レイアウト構築 ---
+# --- 8. タイトル表示 ---
 st.markdown("<p class='game-title'>☕ La Café English Roleplay ☕</p>", unsafe_allow_html=True)
 
-# --- 【新機能：入力モードのホーム選択画面】 ---
-if st.session_state.step == 1:
-    st.markdown('<div class="mode-select-box">', unsafe_allow_html=True)
-    st.markdown('<p class="mode-select-title">🎮 今日のあそびかた（入力モード）をえらんでね！</p>', unsafe_allow_html=True)
+# =========================================================
+# 🏠 【完全分離：ホーム画面（モード選択専用）】
+# =========================================================
+if not st.session_state.is_game_started:
+    st.markdown('<p class="game-subtitle">楽しくお買い物しながら英語をおぼえよう！</p>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="home-container">', unsafe_allow_html=True)
+    st.markdown(f'<p class="home-welcome">Welcome, {st.session_state.kid_name}! 👋<br><span style="font-size:1.1rem; color:#c9b097; font-weight:normal;">あそびかた（入力モード）をえらんでね！</span></p>', unsafe_allow_html=True)
+    
     selected_mode = st.radio(
-        "Input Mode Select",
+        "Choose your play mode",
         options=["🎤 Voice (音声)", "👇 Button (ボタンタップ)", "⌨️ Type (文字入力)"],
-        horizontal=True,
+        index=0,
+        key="mode_radio",
         label_visibility="collapsed"
     )
     st.session_state.input_mode = selected_mode
+    
+    st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
+    
+    # スタートボタン
+    if st.button("🚀 店内にはいる (Start Game)", use_container_width=True):
+        st.session_state.is_game_started = True
+        st.session_state.speak_now = True
+        st.rerun()
+        
     st.markdown('</div>', unsafe_allow_html=True)
 
-main_col, visual_col = st.columns([1.2, 0.8])
+# =========================================================
+# ☕ 【店内：ゲームメイン画面】
+# =========================================================
+else:
+    main_col, visual_col = st.columns([1.2, 0.8])
 
-with visual_col:
-    active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
-    staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:80px; text-align:center;">👩‍🍳</div>'
+    # 右側カラム：ゲームビジュアル（注文が進むと連動する要素）
+    with visual_col:
+        active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
+        staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:80px; text-align:center;">👩‍🍳</div>'
 
-    drink_html = ""
-    food_html = ""
-    if st.session_state.step == 7: 
-        if st.session_state.ordered_drink:
-            local_drink_path = item_images.get(st.session_state.ordered_drink, "")
-            if os.path.exists(local_drink_path):
-                drink_html = f'<img class="drink-present" src="data:image/png;base64,{get_image_base64(local_drink_path)}">'
-        if st.session_state.ordered_food:
-            local_food_path = item_images.get(st.session_state.ordered_food, "")
-            if os.path.exists(local_food_path):
-                food_html = f'<img class="food-present" src="data:image/png;base64,{get_image_base64(local_food_path)}">'
+        drink_html = ""
+        food_html = ""
+        if st.session_state.step == 7: 
+            if st.session_state.ordered_drink:
+                local_drink_path = item_images.get(st.session_state.ordered_drink, "")
+                if os.path.exists(local_drink_path):
+                    drink_html = f'<img class="drink-present" src="data:image/png;base64,{get_image_base64(local_drink_path)}">'
+            if st.session_state.ordered_food:
+                local_food_path = item_images.get(st.session_state.ordered_food, "")
+                if os.path.exists(local_food_path):
+                    food_html = f'<img class="food-present" src="data:image/png;base64,{get_image_base64(local_food_path)}">'
 
-    st.markdown(f"<div class='character-stage'>{staff_html}{drink_html}{food_html}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='character-stage'>{staff_html}{drink_html}{food_html}</div>", unsafe_allow_html=True)
 
-    # 👛 おさいふ表示ボード
-    st.markdown(f"""
-    <div class="wallet-box">
-        <div class="wallet-title"><span>👛 MY WALLET (きょうのおさいふ)</span> <span>Total: ${wallet_total:.2f}</span></div>
-        <div class="wallet-row">
-            <span>💵 $5.00 × <b>{st.session_state.wallet_5}</b></span>
-            <span>💵 $10.00 × <b>{st.session_state.wallet_10}</b></span>
-            <span>💵 $20.00 × <b>{st.session_state.wallet_20}</b></span>
+        # 👛 おさいふ表示ボード
+        st.markdown(f"""
+        <div class="wallet-box">
+            <div class="wallet-title"><span>👛 MY WALLET (きょうのおさいふ)</span> <span>Total: ${wallet_total:.2f}</span></div>
+            <div class="wallet-row">
+                <span>💵 $5.00 × <b>{st.session_state.wallet_5}</b></span>
+                <span>💵 $10.00 × <b>{st.session_state.wallet_10}</b></span>
+                <span>💵 $20.00 × <b>{st.session_state.wallet_20}</b></span>
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    # 価格幅のチューニング
-    drink_prices = {"coffee": 4.0, "tea": 4.0, "latte": 5.0}
-    drink_p = drink_prices.get(st.session_state.ordered_drink, 0.0)
-    temp_p = 0.5 if st.session_state.drink_temp == "iced" else 0.0
-    size_prices = {"small": 0.0, "medium": 1.5, "large": 3.0}
-    size_p = size_prices.get(st.session_state.ordered_size, 0.0)
-    food_prices = {"cake": 8.0, "sandwich": 9.5}
-    food_p = food_prices.get(st.session_state.ordered_food, 0.0)
-    
-    total_p = 0.0
-    if st.session_state.ordered_drink:
-        total_p = drink_p + temp_p + size_p + food_p
-
-    drink_disp = st.session_state.ordered_drink.capitalize() if st.session_state.ordered_drink else "---"
-    temp_disp = st.session_state.drink_temp.capitalize() if st.session_state.drink_temp else "---"
-    size_disp = st.session_state.ordered_size.capitalize() if st.session_state.ordered_size else "---"
-    food_disp = st.session_state.ordered_food.capitalize() if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else "---"
-    place_disp = "Here" if st.session_state.ordered_place == "here" else ("To Go" if st.session_state.ordered_place == "go" else "---")
-    payment_disp = st.session_state.ordered_payment_type.upper() if st.session_state.ordered_payment_type else "---"
-    
-    st.markdown(f"""
-    <div class="receipt-box">
-        <div class="receipt-header">📋 {st.session_state.kid_name.upper()}'S RECEIPT</div>
-        <div style="margin-bottom:8px;">▶ 🥤 Item: {drink_disp} (${drink_p:.2f})</div>
-        <div style="margin-bottom:8px;">▶ 🔥 Temp: {temp_disp} (+${temp_p:.2f})</div>
-        <div style="margin-bottom:8px;">▶ 📏 Size: {size_disp} (+${size_p:.2f})</div>
-        <div style="margin-bottom:8px;">▶ 🥪 Food: {food_disp} (+${food_p:.2f})</div>
-        <div style="margin-bottom:8px;">▶ 🏠 Place: {place_disp}</div>
-        <div style="margin-bottom:12px;">▶ 💳 Pay: {payment_disp}</div>
-        <div class="receipt-total"><span>TOTAL:</span> <span>${total_p:.2f}</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # スタンプカード
-    stamp_slots_html = ""
-    for i in range(1, 11):
-        if i <= st.session_state.total_stamps:
-            if stamp_base64:
-                stamp_slots_html += f"<div class='stamp-slot stamp-active'><img class='stamp-img' src='data:image/png;base64,{stamp_base64}'></div>"
-            else:
-                stamp_slots_html += "<div class='stamp-slot stamp-active'>☕</div>"
-        else:
-            stamp_slots_html += f"<div class='stamp-slot'>{i}</div>"
-            
-    st.markdown(f"""
-    <div class="stamp-card-box">
-        <div class="stamp-title">💮 CUSTOMER STAMP CARD</div>
-        <div class="stamp-grid">{stamp_slots_html}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with main_col:
-    def play_audio(text, speed, voice_cfg):
-        try:
-            tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=False)
-            if speed < 0.9: tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=True)
-            fp = io.BytesIO()
-            tts.write_to_fp(fp)
-            fp.seek(0)
-            b64 = base64.b64encode(fp.read()).decode()
-            st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-        except:
-            pass
-
-    if st.session_state.speak_now:
-        play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
-        st.session_state.speak_now = False
-
-    st.markdown(f"<div class='speech-window'><div>{st.session_state.current_npc_en}</div><div class='speech-sub-jp'>{st.session_state.current_npc_jp}</div></div>", unsafe_allow_html=True)
-
-    user_choice = None
-    mic_input = None
-    user_typed = None
-
-    def fuzzy_match(input_text, keyword_list, fuzzy_rules=None):
-        text = input_text.lower()
-        matched = None
-        exact_hit = False
-        for k in keyword_list:
-            if k in text:
-                matched = k
-                exact_hit = True
-                break
-        if not exact_hit and fuzzy_rules:
-            for k, mistakes in fuzzy_rules.items():
-                for mistake in mistakes:
-                    if mistake in text:
-                        matched = k
-                        exact_hit = False 
-                        break
-                if matched: break
-        if matched:
-            st.session_state.p_heard_text = f'"{text}"'
-            st.session_state.p_matched_keyword = f'"{matched.capitalize()}"'
-            st.session_state.pronunciation_status = "perfect" if exact_hit else "good"
-        return matched
-
-    if st.session_state.step < 7:
-        # --- 【UIの切り替え制御エリア】 ---
+        # 価格計算
+        drink_prices = {"coffee": 4.0, "tea": 4.0, "latte": 5.0}
+        drink_p = drink_prices.get(st.session_state.ordered_drink, 0.0)
+        temp_p = 0.5 if st.session_state.drink_temp == "iced" else 0.0
+        size_prices = {"small": 0.0, "medium": 1.5, "large": 3.0}
+        size_p = size_prices.get(st.session_state.ordered_size, 0.0)
+        food_prices = {"cake": 8.0, "sandwich": 9.5}
+        food_p = food_prices.get(st.session_state.ordered_food, 0.0)
         
-        # 1. 音声入力モードの場合のみマイクを表示
-        if st.session_state.input_mode == "🎤 Voice (音声)" and st.session_state.step != 6:
-            st.markdown('<div class="mic-container">', unsafe_allow_html=True)
-            st.markdown("<p style='color:#ffd700; font-weight:bold; font-size:1.1rem; margin-bottom:5px;'>🎤 Speak English (英語でこたえてね！)</p>", unsafe_allow_html=True)
-            mic_input = speech_to_text(start_prompt="🔴 PUSH TO TALK (おしてね)", stop_prompt="⏹️ STOP", language='en-US', use_container_width=True, key=f'mic_{st.session_state.step}')
-            st.markdown('</div>', unsafe_allow_html=True)
+        total_p = 0.0
+        if st.session_state.ordered_drink:
+            total_p = drink_p + temp_p + size_p + food_p
 
-        if st.session_state.pronunciation_status and st.session_state.input_mode == "🎤 Voice (音声)":
-            icon = "🌟 Perfect!!" if st.session_state.pronunciation_status == "perfect" else "👍 Good Job!"
-            color = "#00ff7f" if st.session_state.pronunciation_status == "perfect" else "#ffd700"
-            st.markdown(f"<div class='pronunciation-badge-container'><div style='color:#aaa; font-size:1.0rem;'>Heard: {st.session_state.p_heard_text} ➔ {st.session_state.p_matched_keyword}</div><div style='color:{color}; font-weight:bold; font-size:1.2rem;'>{icon}</div></div>", unsafe_allow_html=True)
+        drink_disp = st.session_state.ordered_drink.capitalize() if st.session_state.ordered_drink else "---"
+        temp_disp = st.session_state.drink_temp.capitalize() if st.session_state.drink_temp else "---"
+        size_disp = st.session_state.ordered_size.capitalize() if st.session_state.ordered_size else "---"
+        food_disp = st.session_state.ordered_food.capitalize() if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else "---"
+        place_disp = "Here" if st.session_state.ordered_place == "here" else ("To Go" if st.session_state.ordered_place == "go" else "---")
+        payment_disp = st.session_state.ordered_payment_type.upper() if st.session_state.ordered_payment_type else "---"
+        
+        st.markdown(f"""
+        <div class="receipt-box">
+            <div class="receipt-header">📋 {st.session_state.kid_name.upper()}'S RECEIPT</div>
+            <div style="margin-bottom:8px;">▶ 🥤 Item: {drink_disp} (${drink_p:.2f})</div>
+            <div style="margin-bottom:8px;">▶ 🔥 Temp: {temp_disp} (+${temp_p:.2f})</div>
+            <div style="margin-bottom:8px;">▶ 📏 Size: {size_disp} (+${size_p:.2f})</div>
+            <div style="margin-bottom:8px;">▶ 🥪 Food: {food_disp} (+${food_p:.2f})</div>
+            <div style="margin-bottom:8px;">▶ 🏠 Place: {place_disp}</div>
+            <div style="margin-bottom:12px;">▶ 💳 Pay: {payment_disp}</div>
+            <div class="receipt-total"><span>TOTAL:</span> <span>${total_p:.2f}</span></div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # 2. メニューや選択用のカラム（お会計ステップは支払い手段選択のため常時表示）
-        col1, col2, col3 = st.columns(3)
-        keywords = []
-        fuzzy_rules = None
-
-        # メニュー画像などの補助情報表示
-        if st.session_state.step == 1:
-            keywords = ["coffee", "latte", "tea"]
-            menu_col1, menu_col2, menu_col3 = st.columns(3)
-            with menu_col1:
-                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
-            with menu_col2:
-                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
-            with menu_col3:
-                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
-
-            # ボタンモードの時だけフレーズ選択ボタンを表示
-            if st.session_state.input_mode == "👇 Button (ボタンタップ)":
-                with col1:
-                    if st.button("☕️ Coffee, please.", key='b_cf', use_container_width=True): user_choice = "coffee"
-                with col2:
-                    if st.button("🥛 Latte, please.", key='b_lt', use_container_width=True): user_choice = "latte"
-                with col3:
-                    if st.button("🍵 Tea, please.", key='b_te', use_container_width=True): user_choice = "tea"
-
-        elif st.session_state.step == 2:
-            keywords = ["hot", "iced"]
-            fuzzy_rules = {"hot": ["hat", "pot", "heart"], "iced": ["ice", "eyes"]}
-            if st.session_state.input_mode == "👇 Button (ボタンタップ)":
-                with col1:
-                    if st.button("🔥 Hot, please.", key='b_ht', use_container_width=True): user_choice = "hot"
-                with col2:
-                    if st.button(f"❄️ Iced, please. (+${temp_p:.2f})", key='b_ic', use_container_width=True): user_choice = "iced"
-
-        elif st.session_state.step == 3:
-            keywords = ["small", "medium", "large"]
-            if st.session_state.input_mode == "👇 Button (ボタンタップ)":
-                with col1:
-                    if st.button("🟢 Small, please.", key='b_sm', use_container_width=True): user_choice = "small"
-                with col2:
-                    if st.button(f"🟡 Medium, please. (+${size_prices['medium']:.2f})", key='b_md', use_container_width=True): user_choice = "medium"
-                with col3:
-                    if st.button(f"🔴 Large, please. (+${size_prices['large']:.2f})", key='b_lg', use_container_width=True): user_choice = "large"
-
-        elif st.session_state.step == 4:
-            keywords = ["cake", "sandwich", "no"]
-            menu_col1, menu_col2, menu_col3 = st.columns(3)
-            with menu_col1:
-                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['cake']:.2f}</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["cake"]): st.image(item_images["cake"], use_container_width=True)
-            with menu_col2:
-                st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🥪 Sandwich</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['sandwich']:.2f}</p></div>", unsafe_allow_html=True)
-                if os.path.exists(item_images["sandwich"]): st.image(item_images["sandwich"], use_container_width=True)
-            with menu_col3:
-                st.markdown("<div class='menu-card'><p class='menu-card-title'>❌ No Food</p><p style='color:#aaa;'>$0.00</p></div>", unsafe_allow_html=True)
-
-            if st.session_state.input_mode == "👇 Button (ボタンタップ)":
-                with col1:
-                    if st.button("🍰 Cake, please.", key='b_ck', use_container_width=True): user_choice = "cake"
-                with col2:
-                    if st.button("🥪 Sandwich, please.", key='b_sw', use_container_width=True): user_choice = "sandwich"
-                with col3:
-                    if st.button("❌ No, thank you.", key='b_nf', use_container_width=True): user_choice = "no"
-                
-        elif st.session_state.step == 5:
-            keywords = ["here", "go"]
-            if st.session_state.input_mode == "👇 Button (ボタンタップ)":
-                with col1:
-                    if st.button("🏠 For here, please.", key='b_hr', use_container_width=True): user_choice = "here"
-                with col2:
-                    if st.button("🛍️ To go, please.", key='b_tg', use_container_width=True): user_choice = "go"
-                
-        elif st.session_state.step == 6:
-            # お会計時はお札を物理的に手渡す演出のため、どのモードでも特別にボタン（お札画像）を表示します
-            keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
-            
-            pay_col1, pay_col2, pay_col3 = st.columns(3)
-            with pay_col1:
-                can_pay_5 = (st.session_state.wallet_5 > 0) and (5.0 >= total_p)
-                if os.path.exists(cash_images.get("5", "")): st.image(cash_images["5"], use_container_width=True)
-                if st.button("💵 Give $5.00", key='p_5', disabled=not can_pay_5, use_container_width=True): user_choice = "5"
-                if not can_pay_5: st.caption("※手持ちなし/不足")
-            
-            with pay_col2:
-                can_pay_10 = (st.session_state.wallet_10 > 0) and (10.0 >= total_p)
-                if os.path.exists(cash_images.get("10", "")): st.image(cash_images["10"], use_container_width=True)
-                if st.button("💵 Give $10.00", key='p_10', disabled=not can_pay_10, use_container_width=True): user_choice = "10"
-                if not can_pay_10: st.caption("※手持ちなし/不足")
-                
-            with pay_col3:
-                can_pay_20 = (st.session_state.wallet_20 > 0) and (20.0 >= total_p)
-                if os.path.exists(cash_images.get("20", "")): st.image(cash_images["20"], use_container_width=True)
-                if st.button("💵 Give $20.00", key='p_20', disabled=not can_pay_20, use_container_width=True): user_choice = "20"
-                if not can_pay_20: st.caption("※手持ちなし/不足")
-
-            st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
-            if st.button("💳 Pay by card, please. (カードで払う)", key='b_card', use_container_width=True): 
-                user_choice = "card"
-
-            if not can_pay_5 and not can_pay_10 and not can_pay_20:
-                st.error("⚠️ おっと！いま手持ちの現金では足りないみたい！カードで払うか、次は合計を抑えて注文してみてね！")
-
-        # 3. タイピングモードの場合のみチャット入力欄を表示
-        if st.session_state.input_mode == "⌨️ Type (文字入力)" and st.session_state.step != 6:
-            user_typed = st.chat_input("Type your response in English here... (例: coffee, please)")
-
-        # すべての入力ソースを統合
-        raw_input_text = mic_input or user_choice or user_typed
-
-        if "prevent_overlap" not in st.session_state:
-            st.session_state.prevent_overlap = {"step": 0, "text": ""}
-
-        if raw_input_text and (st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != raw_input_text):
-            matched_key = fuzzy_match(raw_input_text, keywords, fuzzy_rules)
-            st.session_state.prevent_overlap["step"] = st.session_state.step
-            st.session_state.prevent_overlap["text"] = raw_input_text
-
-            if matched_key:
-                import time
-                time.sleep(0.4)
-                st.session_state.pronunciation_status = None 
-                
-                if st.session_state.step == 1:
-                    st.session_state.ordered_drink = matched_key
-                    st.session_state.current_npc_en = "Excellent choice! Hot or iced? How would you like your drink?"
-                    st.session_state.current_npc_jp = "いいですね！ホット（hot）か、アイス（iced）どちらにしますか？"
-                    st.session_state.emotion = "happy"
-                    st.session_state.step = 2
-                elif st.session_state.step == 2:
-                    st.session_state.drink_temp = matched_key
-                    st.session_state.current_npc_en = f"Got it, {matched_key.capitalize()}! Now, what size would you like? Small, medium, or large?"
-                    st.session_state.current_npc_jp = f"はい、{matched_key.capitalize()}ですね！サイズはどうしますか？"
-                    st.session_state.step = 3
-                elif st.session_state.step == 3:
-                    st.session_state.ordered_size = matched_key
-                    st.session_state.has_food_event = random.choice([True, False])
-                    if st.session_state.has_food_event:
-                        st.session_state.current_npc_en = "Okay! By the way, would you like a chocolate cake or a club sandwich with that today?"
-                        st.session_state.current_npc_jp = "かしこまりました！よろしければ、ケーキやクラブサンドイッチはいかがですか？"
-                        st.session_state.step = 4
-                    else:
-                        st.session_state.ordered_food = "no"
-                        st.session_state.current_npc_en = "Okay! Is that for here or to go?"
-                        st.session_state.current_npc_jp = "店内で召し上がりますか？それともお持ち帰りですか？"
-                        st.session_state.step = 5
-                elif st.session_state.step == 4:
-                    st.session_state.ordered_food = matched_key if matched_key in ["cake", "sandwich"] else "no"
-                    st.session_state.current_npc_en = "Got it! Now, is that for here or to go?"
-                    st.session_state.current_npc_jp = "かしこまりました！では、店内で召し上がりますか？お持ち帰りですか？"
-                    st.session_state.step = 5
-                elif st.session_state.step == 5:
-                    st.session_state.ordered_place = matched_key
-                    st.session_state.current_npc_en = f"Perfect! Your total is ${total_p:.2f}. How would you like to pay?"
-                    st.session_state.current_npc_jp = f"合計で${total_p:.2f}です。お財布のなかみから払えるお札を選んで手渡してね！"
-                    st.session_state.step = 6
-                elif st.session_state.step == 6:
-                    food_msg = f" and {st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
-                    food_msg_jp = f"と{st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
-                    
-                    if matched_key in ["5", "five"]:
-                        st.session_state.ordered_payment_type = "cash ($5)"
-                        st.session_state.paid_amount = 5.0
-                        st.session_state.wallet_5 -= 1
-                    elif matched_key in ["10", "ten"]:
-                        st.session_state.ordered_payment_type = "cash ($10)"
-                        st.session_state.paid_amount = 10.0
-                        st.session_state.wallet_10 -= 1
-                    elif matched_key in ["20", "twenty"]:
-                        st.session_state.ordered_payment_type = "cash ($20)"
-                        st.session_state.paid_amount = 20.0
-                        st.session_state.wallet_20 -= 1
-                    else:
-                        st.session_state.ordered_payment_type = "card"
-                        st.session_state.paid_amount = total_p
-                    
-                    st.session_state.change_amount = st.session_state.paid_amount - total_p
-                    
-                    if st.session_state.ordered_payment_type.startswith("cash"):
-                        if st.session_state.change_amount > 0:
-                            st.session_state.current_npc_en = f"Thank you so much! Here is your change, ${st.session_state.change_amount:.2f}. And here is your drink{food_msg}. Enjoy!"
-                            st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文のドリンク{food_msg_jp}もどうぞ！"
-                        else:
-                            st.session_state.current_npc_en = f"Thank you for the exact amount! Here is your drink{food_msg}. Enjoy!"
-                            st.session_state.current_npc_jp = f"ぴったりのお支払いで助かります！ご注文のドリンク{food_msg_jp}です。どうぞ！"
-                    else:
-                        st.session_state.current_npc_en = f"Thank you so much! Payment approved. Here is your drink{food_msg}. Enjoy!"
-                        st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文のドリンク{food_msg_jp}になります。どうぞ！"
-                        
-                    st.session_state.emotion = "happy"
-                    st.session_state.step = 7 
-                st.session_state.speak_now = True
-                st.rerun()
+        # スタンプカード
+        stamp_slots_html = ""
+        for i in range(1, 11):
+            if i <= st.session_state.total_stamps:
+                if stamp_base64:
+                    stamp_slots_html += f"<div class='stamp-slot stamp-active'><img class='stamp-img' src='data:image/png;base64,{stamp_base64}'></div>"
+                else:
+                    stamp_slots_html += "<div class='stamp-slot stamp-active'>☕</div>"
             else:
-                import time
-                time.sleep(0.4)
-                st.session_state.pronunciation_status = None 
-                st.session_state.current_npc_en = "Sorry, could you say that again?"
-                st.session_state.current_npc_jp = "すみません、もう一度おっしゃっていただけますか？"
-                st.session_state.speak_now = True
+                stamp_slots_html += f"<div class='stamp-slot'>{i}</div>"
+                
+        st.markdown(f"""
+        <div class="stamp-card-box">
+            <div class="stamp-title">💮 CUSTOMER STAMP CARD</div>
+            <div class="stamp-grid">{stamp_slots_html}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 左側カラム：英会話メインエリア
+    with main_col:
+        def play_audio(text, speed, voice_cfg):
+            try:
+                tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=False)
+                if speed < 0.9: tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=True)
+                fp = io.BytesIO()
+                tts.write_to_fp(fp)
+                fp.seek(0)
+                b64 = base64.b64encode(fp.read()).decode()
+                st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+            except:
+                pass
+
+        if st.session_state.speak_now:
+            play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
+            st.session_state.speak_now = False
+
+        st.markdown(f"<div class='speech-window'><div>{st.session_state.current_npc_en}</div><div class='speech-sub-jp'>{st.session_state.current_npc_jp}</div></div>", unsafe_allow_html=True)
+
+        user_choice = None
+        mic_input = None
+        user_typed = None
+
+        def fuzzy_match(input_text, keyword_list, fuzzy_rules=None):
+            text = input_text.lower()
+            matched = None
+            exact_hit = False
+            for k in keyword_list:
+                if k in text:
+                    matched = k
+                    exact_hit = True
+                    break
+            if not exact_hit and fuzzy_rules:
+                for k, mistakes in fuzzy_rules.items():
+                    for mistake in mistakes:
+                        if mistake in text:
+                            matched = k
+                            exact_hit = False 
+                            break
+                    if matched: break
+            if matched:
+                st.session_state.p_heard_text = f'"{text}"'
+                st.session_state.p_matched_keyword = f'"{matched.capitalize()}"'
+                st.session_state.pronunciation_status = "perfect" if exact_hit else "good"
+            return matched
+
+        if st.session_state.step < 7:
+            # 💡 選択されたモードによるUIの完全切り替え制御
+            
+            # 【1】 音声入力モード専用UI
+            if st.session_state.input_mode == "🎤 Voice (音声)" and st.session_state.step != 6:
+                st.markdown('<div class="mic-container">', unsafe_allow_html=True)
+                st.markdown("<p style='color:#ffd700; font-weight:bold; font-size:1.1rem; margin-bottom:5px;'>🎤 Speak English (英語でこたえてね！)</p>", unsafe_allow_html=True)
+                mic_input = speech_to_text(start_prompt="🔴 PUSH TO TALK (おしてね)", stop_prompt="⏹️ STOP", language='en-US', use_container_width=True, key=f'mic_{st.session_state.step}')
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            if st.session_state.pronunciation_status and st.session_state.input_mode == "🎤 Voice (音声)":
+                icon = "🌟 Perfect!!" if st.session_state.pronunciation_status == "perfect" else "👍 Good Job!"
+                color = "#00ff7f" if st.session_state.pronunciation_status == "perfect" else "#ffd700"
+                st.markdown(f"<div class='pronunciation-badge-container'><div style='color:#aaa; font-size:1.0rem;'>Heard: {st.session_state.p_heard_text} ➔ {st.session_state.p_matched_keyword}</div><div style='color:{color}; font-weight:bold; font-size:1.2rem;'>{icon}</div></div>", unsafe_allow_html=True)
+
+            # 共通カラム（ボタン配置または画像カタログ用）
+            col1, col2, col3 = st.columns(3)
+            keywords = []
+            fuzzy_rules = None
+
+            # 各ステップに応じたメニュー・ボタン生成
+            if st.session_state.step == 1:
+                keywords = ["coffee", "latte", "tea"]
+                menu_col1, menu_col2, menu_col3 = st.columns(3)
+                with menu_col1:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p></div>", unsafe_allow_html=True)
+                    if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
+                with menu_col2:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p></div>", unsafe_allow_html=True)
+                    if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
+                with menu_col3:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>", unsafe_allow_html=True)
+                    if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
+
+                # 【2】 ボタンタップモード専用フレーズボタン
+                if st.session_state.input_mode == "👇 Button (ボタンタップ)":
+                    with col1:
+                        if st.button("☕️ Coffee, please.", key='b_cf', use_container_width=True): user_choice = "coffee"
+                    with col2:
+                        if st.button("🥛 Latte, please.", key='b_lt', use_container_width=True): user_choice = "latte"
+                    with col3:
+                        if st.button("🍵 Tea, please.", key='b_te', use_container_width=True): user_choice = "tea"
+
+            elif st.session_state.step == 2:
+                keywords = ["hot", "iced"]
+                fuzzy_rules = {"hot": ["hat", "pot", "heart"], "iced": ["ice", "eyes"]}
+                if st.session_state.input_mode == "👇 Button (ボタンタップ)":
+                    with col1:
+                        if st.button("🔥 Hot, please.", key='b_ht', use_container_width=True): user_choice = "hot"
+                    with col2:
+                        if st.button(f"❄️ Iced, please. (+${temp_p:.2f})", key='b_ic', use_container_width=True): user_choice = "iced"
+
+            elif st.session_state.step == 3:
+                keywords = ["small", "medium", "large"]
+                if st.session_state.input_mode == "👇 Button (ボタンタップ)":
+                    with col1:
+                        if st.button("🟢 Small, please.", key='b_sm', use_container_width=True): user_choice = "small"
+                    with col2:
+                        if st.button(f"🟡 Medium, please. (+${size_prices['medium']:.2f})", key='b_md', use_container_width=True): user_choice = "medium"
+                    with col3:
+                        if st.button(f"🔴 Large, please. (+${size_prices['large']:.2f})", key='b_lg', use_container_width=True): user_choice = "large"
+
+            elif st.session_state.step == 4:
+                keywords = ["cake", "sandwich", "no"]
+                menu_col1, menu_col2, menu_col3 = st.columns(3)
+                with menu_col1:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['cake']:.2f}</p></div>", unsafe_allow_html=True)
+                    if os.path.exists(item_images["cake"]): st.image(item_images["cake"], use_container_width=True)
+                with menu_col2:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🥪 Sandwich</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['sandwich']:.2f}</p></div>", unsafe_allow_html=True)
+                    if os.path.exists(item_images["sandwich"]): st.image(item_images["sandwich"], use_container_width=True)
+                with menu_col3:
+                    st.markdown("<div class='menu-card'><p class='menu-card-title'>❌ No Food</p><p style='color:#aaa;'>$0.00</p></div>", unsafe_allow_html=True)
+
+                if st.session_state.input_mode == "👇 Button (ボタンタップ)":
+                    with col1:
+                        if st.button("🍰 Cake, please.", key='b_ck', use_container_width=True): user_choice = "cake"
+                    with col2:
+                        if st.button("🥪 Sandwich, please.", key='b_sw', use_container_width=True): user_choice = "sandwich"
+                    with col3:
+                        if st.button("❌ No, thank you.", key='b_nf', use_container_width=True): user_choice = "no"
+                    
+            elif st.session_state.step == 5:
+                keywords = ["here", "go"]
+                if st.session_state.input_mode == "👇 Button (ボタンタップ)":
+                    with col1:
+                        if st.button("🏠 For here, please.", key='b_hr', use_container_width=True): user_choice = "here"
+                    with col2:
+                        if st.button("🛍️ To go, please.", key='b_tg', use_container_width=True): user_choice = "go"
+                    
+            elif st.session_state.step == 6:
+                # お会計（お札手渡し）は全モード共通の特別演出
+                keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
+                
+                pay_col1, pay_col2, pay_col3 = st.columns(3)
+                with pay_col1:
+                    can_pay_5 = (st.session_state.wallet_5 > 0) and (5.0 >= total_p)
+                    if os.path.exists(cash_images.get("5", "")): st.image(cash_images["5"], use_container_width=True)
+                    if st.button("💵 Give $5.00", key='p_5', disabled=not can_pay_5, use_container_width=True): user_choice = "5"
+                    if not can_pay_5: st.caption("※手持ちなし/不足")
+                
+                with pay_col2:
+                    can_pay_10 = (st.session_state.wallet_10 > 0) and (10.0 >= total_p)
+                    if os.path.exists(cash_images.get("10", "")): st.image(cash_images["10"], use_container_width=True)
+                    if st.button("💵 Give $10.00", key='p_10', disabled=not can_pay_10, use_container_width=True): user_choice = "10"
+                    if not can_pay_10: st.caption("※手持ちなし/不足")
+                    
+                with pay_col3:
+                    can_pay_20 = (st.session_state.wallet_20 > 0) and (20.0 >= total_p)
+                    if os.path.exists(cash_images.get("20", "")): st.image(cash_images["20"], use_container_width=True)
+                    if st.button("💵 Give $20.00", key='p_20', disabled=not can_pay_20, use_container_width=True): user_choice = "20"
+                    if not can_pay_20: st.caption("※手持ちなし/不足")
+
+                st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
+                if st.button("💳 Pay by card, please. (カードで払う)", key='b_card', use_container_width=True): 
+                    user_choice = "card"
+
+                if not can_pay_5 and not can_pay_10 and not can_pay_20:
+                    st.error("⚠️ おっと！いま手持ちの現金では足りないみたい！カードで払うか、次は合計を抑えて注文してみてね！")
+
+            # 【3】 文字入力モード専用UI
+            if st.session_state.input_mode == "⌨️ Type (文字入力)" and st.session_state.step != 6:
+                user_typed = st.chat_input("Type your response in English here... (例: coffee, please)")
+
+            # 入力の判定処理
+            raw_input_text = mic_input or user_choice or user_typed
+
+            if "prevent_overlap" not in st.session_state:
+                st.session_state.prevent_overlap = {"step": 0, "text": ""}
+
+            if raw_input_text and (st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != raw_input_text):
+                matched_key = fuzzy_match(raw_input_text, keywords, fuzzy_rules)
+                st.session_state.prevent_overlap["step"] = st.session_state.step
+                st.session_state.prevent_overlap["text"] = raw_input_text
+
+                if matched_key:
+                    import time
+                    time.sleep(0.4)
+                    st.session_state.pronunciation_status = None 
+                    
+                    if st.session_state.step == 1:
+                        st.session_state.ordered_drink = matched_key
+                        st.session_state.current_npc_en = "Excellent choice! Hot or iced? How would you like your drink?"
+                        st.session_state.current_npc_jp = "いいですね！ホット（hot）か、アイス（iced）どちらにしますか？"
+                        st.session_state.emotion = "happy"
+                        st.session_state.step = 2
+                    elif st.session_state.step == 2:
+                        st.session_state.drink_temp = matched_key
+                        st.session_state.current_npc_en = f"Got it, {matched_key.capitalize()}! Now, what size would you like? Small, medium, or large?"
+                        st.session_state.current_npc_jp = f"はい、{matched_key.capitalize()}ですね！サイズはどうしますか？"
+                        st.session_state.step = 3
+                    elif st.session_state.step == 3:
+                        st.session_state.ordered_size = matched_key
+                        st.session_state.has_food_event = random.choice([True, False])
+                        if st.session_state.has_food_event:
+                            st.session_state.current_npc_en = "Okay! By the way, would you like a chocolate cake or a club sandwich with that today?"
+                            st.session_state.current_npc_jp = "かしこまりました！よろしければ、ケーキやクラブサンドイッチはいかがですか？"
+                            st.session_state.step = 4
+                        else:
+                            st.session_state.ordered_food = "no"
+                            st.session_state.current_npc_en = "Okay! Is that for here or to go?"
+                            st.session_state.current_npc_jp = "店内で召し上がりますか？それともお持ち帰りですか？"
+                            st.session_state.step = 5
+                    elif st.session_state.step == 4:
+                        st.session_state.ordered_food = matched_key if matched_key in ["cake", "sandwich"] else "no"
+                        st.session_state.current_npc_en = "Got it! Now, is that for here or to go?"
+                        st.session_state.current_npc_jp = "かしこまりました！では、店内で召し上がりますか？お持ち帰りですか？"
+                        st.session_state.step = 5
+                    elif st.session_state.step == 5:
+                        st.session_state.ordered_place = matched_key
+                        st.session_state.current_npc_en = f"Perfect! Your total is ${total_p:.2f}. How would you like to pay?"
+                        st.session_state.current_npc_jp = f"合計で${total_p:.2f}です。お財布のなかみから払えるお札を選んで手渡してね！"
+                        st.session_state.step = 6
+                    elif st.session_state.step == 6:
+                        food_msg = f" and {st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
+                        food_msg_jp = f"と{st.session_state.ordered_food}" if (st.session_state.ordered_food and st.session_state.ordered_food != "no") else ""
+                        
+                        if matched_key in ["5", "five"]:
+                            st.session_state.ordered_payment_type = "cash ($5)"
+                            st.session_state.paid_amount = 5.0
+                            st.session_state.wallet_5 -= 1
+                        elif matched_key in ["10", "ten"]:
+                            st.session_state.ordered_payment_type = "cash ($10)"
+                            st.session_state.paid_amount = 10.0
+                            st.session_state.wallet_10 -= 1
+                        elif matched_key in ["20", "twenty"]:
+                            st.session_state.ordered_payment_type = "cash ($20)"
+                            st.session_state.paid_amount = 20.0
+                            st.session_state.wallet_20 -= 1
+                        else:
+                            st.session_state.ordered_payment_type = "card"
+                            st.session_state.paid_amount = total_p
+                        
+                        st.session_state.change_amount = st.session_state.paid_amount - total_p
+                        
+                        if st.session_state.ordered_payment_type.startswith("cash"):
+                            if st.session_state.change_amount > 0:
+                                st.session_state.current_npc_en = f"Thank you so much! Here is your change, ${st.session_state.change_amount:.2f}. And here is your drink{food_msg}. Enjoy!"
+                                st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文のドリンク{food_msg_jp}もどうぞ！"
+                            else:
+                                st.session_state.current_npc_en = f"Thank you for the exact amount! Here is your drink{food_msg}. Enjoy!"
+                                st.session_state.current_npc_jp = f"ぴったりのお支払いで助かります！ご注文のドリンク{food_msg_jp}です。どうぞ！"
+                        else:
+                            st.session_state.current_npc_en = f"Thank you so much! Payment approved. Here is your drink{food_msg}. Enjoy!"
+                            st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文のドリンク{food_msg_jp}になります。どうぞ！"
+                            
+                        st.session_state.emotion = "happy"
+                        st.session_state.step = 7 
+                    st.session_state.speak_now = True
+                    st.rerun()
+                else:
+                    import time
+                    time.sleep(0.4)
+                    st.session_state.pronunciation_status = None 
+                    st.session_state.current_npc_en = "Sorry, could you say that again?"
+                    st.session_state.current_npc_jp = "すみません、もう一度おっしゃっていただけますか？"
+                    st.session_state.speak_now = True
+                    st.rerun()
+        else:
+            # クリア処理
+            if not st.session_state.stamp_processed:
+                st.session_state.total_stamps += 1
+                st.session_state.stamp_processed = True
                 st.rerun()
-    else:
-        if not st.session_state.stamp_processed:
-            st.session_state.total_stamps += 1
-            st.session_state.stamp_processed = True
-            st.rerun()
 
-        st.balloons()
-        st.success("🎉 Good Job! Roleplay Completed!")
+            st.balloons()
+            st.success("🎉 Good Job! Roleplay Completed!")
 
-        stamps = st.session_state.total_stamps
-        if stamps >= 10:
-            st.markdown(f"""<div class='award-card'><div class='award-title'>👑 GRAND CAFE MASTER 👑</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>👑🏆👑</div><p>最高峰のカフェ英語マスターの証明書です！</p></div>""", unsafe_allow_html=True)
-        elif stamps >= 5:
-            st.markdown(f"""<div class='award-card' style='border-color:#ff9900;'><div class='award-title' style='color:#ff9900;'>🥇 REGULAR VIP MEMBER 🥇</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥇✨🎖️</div><p>いつもありがとう！常連VIP会員証</p></div>""", unsafe_allow_html=True)
-        elif stamps >= 3:
-            st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
+            stamps = st.session_state.total_stamps
+            if stamps >= 10:
+                st.markdown(f"""<div class='award-card'><div class='award-title'>👑 GRAND CAFE MASTER 👑</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>👑🏆👑</div><p>最高峰のカフェ英語マスターの証明書です！</p></div>""", unsafe_allow_html=True)
+            elif stamps >= 5:
+                st.markdown(f"""<div class='award-card' style='border-color:#ff9900;'><div class='award-title' style='color:#ff9900;'>🥇 REGULAR VIP MEMBER 🥇</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥇✨🎖️</div><p>いつもありがとう！常連VIP会員証</p></div>""", unsafe_allow_html=True)
+            elif stamps >= 3:
+                st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
 
-        if st.button("🔄 Play Again (新しいモードやおさいふで遊ぶ)", key='b_again', use_container_width=True):
-            keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_food", "ordered_place", "ordered_payment_type", "paid_amount", "change_amount", "has_food_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed"]
-            for key in keys_to_reset:
-                if key in st.session_state:
-                    del st.session_state[key]
-            init_random_wallet() 
-            st.rerun()
+            if st.button("🔄 Play Again (ホーム画面にもどる)", key='b_again', use_container_width=True):
+                keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_food", "ordered_place", "ordered_payment_type", "paid_amount", "change_amount", "has_food_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed", "is_game_started"]
+                for key in keys_to_reset:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                init_random_wallet() 
+                st.rerun()
