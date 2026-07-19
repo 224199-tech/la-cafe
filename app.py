@@ -100,14 +100,16 @@ if "step" not in st.session_state:
     st.session_state.ordered_size = None  
     st.session_state.ordered_cookie = False 
     st.session_state.ordered_place = None  
-    st.session_state.ordered_payment = None 
+    st.session_state.ordered_payment_type = None 
+    st.session_state.paid_amount = 0.0
+    st.session_state.change_amount = 0.0
     st.session_state.has_cookie_event = False 
     st.session_state.pronunciation_status = None 
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
     st.session_state.stamp_processed = False
 
-# --- 6. サイドバー設定 (お名前入力欄を設置) ---
+# --- 6. サイドバー設定 (お名前入力欄) ---
 st.sidebar.markdown("### 👤カスタマー情報")
 input_name = st.sidebar.text_input("お子さまのお名前 (英語)", value=st.session_state.kid_name)
 if input_name:
@@ -125,7 +127,7 @@ selected_voice = voice_map[voice_gender]
 bgm_url = "https://archive.org/download/lofi-hiphop-cozy-vibes/Lo-Fi%20Hiphop%20-%20Cozy%20Vibes.mp3"
 st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
-# --- 7. 画面描画（スマホ縦並び完全最適化カラム） ---
+# --- 7. 画面描画（カラム比率最適化） ---
 st.markdown("<p class='game-title'>La Café English Roleplay</p>", unsafe_allow_html=True)
 
 main_col, visual_col = st.columns([1.1, 0.9])
@@ -162,7 +164,7 @@ with visual_col:
     size_disp = st.session_state.ordered_size.capitalize() if st.session_state.ordered_size else "---"
     cookie_disp = "Cookie" if st.session_state.ordered_cookie else "---"
     place_disp = "Here" if st.session_state.ordered_place == "here" else ("Go" if st.session_state.ordered_place == "go" else "---")
-    payment_disp = st.session_state.ordered_payment.capitalize() if st.session_state.ordered_payment else "---"
+    payment_disp = st.session_state.ordered_payment_type.capitalize() if st.session_state.ordered_payment_type else "---"
     
     st.markdown(f"""
     <div class="receipt-memo">
@@ -308,11 +310,26 @@ with main_col:
                 if st.button("🛍️ To go", key='btn_go', use_container_width=True): user_choice = "To go, please."
                 
         elif st.session_state.step == 6:
-            keywords = ["cash", "card"]
+            # 【新お会計システム】合計金額に合わせて出せるお札を自動判定
+            keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
+            fuzzy_rules = {"5": ["five dollars"], "10": ["ten dollars"], "20": ["twenty dollars"]}
+            
+            # 合計金額に応じて出せる最低金額のボタンのみ有効にする
             with col1:
-                if st.button("💵 Cash", key='btn_cash', use_container_width=True): user_choice = "Cash, please."
+                if total_p <= 5.0:
+                    if st.button("💵 Here is $5.00", key='btn_pay_5', use_container_width=True): user_choice = "Here is 5 dollars."
+                else:
+                    st.button("💵 $5.00 (足りません)", key='btn_pay_5_dis', disabled=True, use_container_width=True)
             with col2:
-                if st.button("💳 Card", key='btn_card', use_container_width=True): user_choice = "By card, please."
+                if total_p <= 10.0:
+                    if st.button("💵 Here is $10.00", key='btn_pay_10', use_container_width=True): user_choice = "Here is 10 dollars."
+                else:
+                    st.button("💵 $10.00 (足りません)", key='btn_pay_10_dis', disabled=True, use_container_width=True)
+            with col3:
+                if st.button("💵 Here is $20.00", key='btn_pay_20', use_container_width=True): user_choice = "Here is 20 dollars."
+                
+            # カード支払い用の選択肢も予備で配置
+            if st.button("💳 By card, please.", key='btn_pay_card_alt', use_container_width=True): user_choice = "Card, please."
 
         user_typed = st.chat_input("Or type here...")
         
@@ -363,16 +380,40 @@ with main_col:
                     st.session_state.step = 5
                 elif st.session_state.step == 5:
                     st.session_state.ordered_place = matched_key
-                    total_price = 3.50 + (1.50 if st.session_state.ordered_cookie else 0.0)
-                    st.session_state.current_npc_en = f"Perfect! Your total is ${total_price:.2f}. Cash or card?"
-                    st.session_state.current_npc_jp = f"合計で${total_price:.2f}です。お支払いは現金ですか、カードですか？"
+                    st.session_state.current_npc_en = f"Perfect! Your total is ${total_p:.2f}. How would you like to pay?"
+                    st.session_state.current_npc_jp = f"合計で${total_p:.2f}です。お支払い方法（現金のお札の額、またはカード）を選んでね！"
                     st.session_state.step = 6
                 elif st.session_state.step == 6:
-                    st.session_state.ordered_payment = matched_key
+                    # 現金お支払い時の金額判定とお釣り計算演出
                     c_msg = " and cookie" if st.session_state.ordered_cookie else ""
                     c_msg_jp = "とクッキー" if st.session_state.ordered_cookie else ""
-                    st.session_state.current_npc_en = f"Thank you so much! Here is your drink{c_msg}. Enjoy your time!"
-                    st.session_state.current_npc_jp = f"ありがとうございました！ご注文のドリンク{c_msg_jp}です。ごゆっくりどうぞ！"
+                    
+                    if matched_key in ["5", "five"]:
+                        st.session_state.ordered_payment_type = "cash ($5)"
+                        st.session_state.paid_amount = 5.0
+                    elif matched_key in ["10", "ten"]:
+                        st.session_state.ordered_payment_type = "cash ($10)"
+                        st.session_state.paid_amount = 10.0
+                    elif matched_key in ["20", "twenty"]:
+                        st.session_state.ordered_payment_type = "cash ($20)"
+                        st.session_state.paid_amount = 20.0
+                    else:
+                        st.session_state.ordered_payment_type = "card"
+                        st.session_state.paid_amount = total_p
+                    
+                    st.session_state.change_amount = st.session_state.paid_amount - total_p
+                    
+                    if st.session_state.ordered_payment_type.startswith("cash"):
+                        if st.session_state.change_amount > 0:
+                            st.session_state.current_npc_en = f"Thank you so much! Here is your change, ${st.session_state.change_amount:.2f}. And here is your drink{c_msg}. Enjoy!"
+                            st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文のドリンク{c_msg_jp}もどうぞ。ごゆっくり！"
+                        else:
+                            st.session_state.current_npc_en = f"Thank you for the exact amount! Here is your drink{c_msg}. Enjoy your time!"
+                            st.session_state.current_npc_jp = f"ちょうどのお支払いでありがとうございます！ご注文のドリンク{c_msg_jp}です。ごゆっくり！"
+                    else:
+                        st.session_state.current_npc_en = f"Thank you so much! Payment approved. Here is your drink{c_msg}. Enjoy your time!"
+                        st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文のドリンク{c_msg_jp}になります。ごゆっくり！"
+                        
                     st.session_state.emotion = "happy"
                     st.session_state.step = 7 
                 st.session_state.speak_now = True
@@ -395,7 +436,7 @@ with main_col:
         st.balloons()
         st.success("🎉 Order Completed!")
 
-        # 🎖️ スタンプ数に応じたデジタル会員証の演出
+        # 🎖️ デジタル会員証演出
         stamps = st.session_state.total_stamps
         if stamps >= 10:
             st.markdown(f"""<div class='award-card'><div class='award-title'>👑 GRAND CAFE MASTER 👑</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>👑🏆👑</div><p style='margin:0; font-size:0.8rem; color:#ffd700;'>あなたは最高峰のカフェマスターです！</p></div>""", unsafe_allow_html=True)
@@ -404,9 +445,8 @@ with main_col:
         elif stamps >= 3:
             st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p style='margin:0; font-size:0.8rem; color:#b5733d;'>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
 
-        # 💡【重要修正】重複エラーを絶対に起こさないセーフティ設計のもう一度遊ぶボタン
         if st.button("Play Again (もういちど遊ぶ)", key='btn_play_again_action', use_container_width=True):
-            keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed"]
+            keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment_type", "paid_amount", "change_amount", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed"]
             for key in keys_to_reset:
                 if key in st.session_state:
                     del st.session_state[key]
