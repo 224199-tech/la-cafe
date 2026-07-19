@@ -42,10 +42,10 @@ bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg
 st.markdown(f"""
 <style>
 .stApp {{
-{bg_style}
-background-size: cover;
-background-position: center;
-background-attachment: fixed;
+    {bg_style}
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -55,212 +55,212 @@ st.markdown("""
 <style>
 /* 全体の余白を極限まで縮小 */
 .block-container {
-background-color: rgba(0, 0, 0, 0.15); 
-padding: 0.5rem !important;
+    background-color: rgba(0, 0, 0, 0.15); 
+    padding: 0.5rem !important;
 }
 .game-title {
-color: #ffffff;
-text-align: center;
-font-family: 'Helvetica Neue', Arial, sans-serif;
-font-size: 1.5rem;
-font-weight: bold;
-text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-margin-top: 2px;
-margin-bottom: 4px;
+    color: #ffffff;
+    text-align: center;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    margin-top: 2px;
+    margin-bottom: 4px;
 }
 
 /* お姉さん表示エリア（高さ制限をしてスマホでのハミ出しを防御） */
 .character-stage {
-display: flex;
-justify-content: center;
-align-items: flex-end;
-height: 280px; 
-margin-bottom: 6px;
-position: relative;
-overflow: hidden; 
-border-radius: 10px;
-background: rgba(0,0,0,0.25);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    height: 280px; 
+    margin-bottom: 6px;
+    position: relative;
+    overflow: hidden; 
+    border-radius: 10px;
+    background: rgba(0,0,0,0.25);
 }
 .npc-large-img {
-max-height: 100%; 
-width: auto;
-object-fit: contain;
-filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.5));
-animation: subtleFloat 3s infinite ease-in-out;
-position: relative;
-bottom: 0px; 
-z-index: 5;
+    max-height: 100%; 
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.5));
+    animation: subtleFloat 3s infinite ease-in-out;
+    position: relative;
+    bottom: 0px; 
+    z-index: 5;
 }
 
 /* 注文が完成したときのプレゼント画像 */
 .drink-present {
-position: absolute;
-bottom: 10px; 
-right: 15%; 
-width: 90px; 
-height: 90px;
-object-fit: contain;
-z-index: 10; 
-filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6));
-animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    position: absolute;
+    bottom: 10px; 
+    right: 15%; 
+    width: 90px; 
+    height: 90px;
+    object-fit: contain;
+    z-index: 10; 
+    filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6));
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 .cookie-present {
-position: absolute;
-bottom: 10px; 
-right: 25%; 
-width: 75px; 
-height: 75px;
-object-fit: contain;
-z-index: 11; 
-filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6));
-animation: popIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    position: absolute;
+    bottom: 10px; 
+    right: 25%; 
+    width: 75px; 
+    height: 75px;
+    object-fit: contain;
+    z-index: 11; 
+    filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.6));
+    animation: popIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 @keyframes popIn {
-0% { transform: scale(0) rotate(-15deg); opacity: 0; }
-100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 @keyframes subtleFloat {
-0%, 100% { transform: translateY(0); }
-50% { transform: translateY(-5px); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
 }
 
 /* セリフウィンドウ（フォントサイズ調整とスリム化） */
 .speech-window {
-background: rgba(26, 15, 8, 0.95); 
-border: 2px solid #d7c49e;
-border-radius: 10px;
-padding: 8px 12px;
-color: #ffffff;
-font-size: 1.1rem;
-font-weight: bold;
-box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-margin-bottom: 6px;
-min-height: 60px;
+    background: rgba(26, 15, 8, 0.95); 
+    border: 2px solid #d7c49e;
+    border-radius: 10px;
+    padding: 8px 12px;
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    margin-bottom: 6px;
+    min-height: 60px;
 }
 .speech-sub-jp {
-font-size: 0.78rem;
-color: #bfaaa0;
-font-weight: normal;
-margin-top: 3px;
-border-top: 1px dashed rgba(215, 196, 158, 0.3);
-padding-top: 3px;
+    font-size: 0.78rem;
+    color: #bfaaa0;
+    font-weight: normal;
+    margin-top: 3px;
+    border-top: 1px dashed rgba(215, 196, 158, 0.3);
+    padding-top: 3px;
 }
 
 /* 極薄型のステータスレシート（画面の圧迫を防ぐ） */
 .receipt-memo {
-background-color: #fffef0;
-border-left: 2px dashed #ccc;
-border-right: 2px dashed #ccc;
-border-top: 1px solid #ccc;
-border-bottom: 1px solid #ccc;
-padding: 4px 8px;
-color: #333333;
-font-family: 'Courier New', Courier, monospace;
-font-size: 0.75rem;
-box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-margin-top: 3px;
-margin-bottom: 3px;
-line-height: 1.2;
+    background-color: #fffef0;
+    border-left: 2px dashed #ccc;
+    border-right: 2px dashed #ccc;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    padding: 4px 8px;
+    color: #333333;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.75rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    margin-top: 3px;
+    margin-bottom: 3px;
+    line-height: 1.2;
 }
 .receipt-header {
-text-align: center;
-font-weight: bold;
-font-size: 0.8rem;
-border-bottom: 1px dashed #333;
-margin-bottom: 3px;
-padding-bottom: 1px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    border-bottom: 1px dashed #333;
+    margin-bottom: 3px;
+    padding-bottom: 1px;
 }
 .receipt-item-container {
-display: flex;
-flex-wrap: wrap;
-justify-content: space-between;
-gap: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px;
 }
 .receipt-item {
-font-size: 0.7rem;
-background: rgba(0,0,0,0.04);
-padding: 1px 5px;
-border-radius: 3px;
+    font-size: 0.7rem;
+    background: rgba(0,0,0,0.04);
+    padding: 1px 5px;
+    border-radius: 3px;
 }
 .receipt-total {
-border-top: 1px dashed #333;
-margin-top: 3px;
-padding-top: 1px;
-font-weight: bold;
-font-size: 0.8rem;
-display: flex;
-justify-content: space-between;
-width: 100%;
+    border-top: 1px dashed #333;
+    margin-top: 3px;
+    padding-top: 1px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
 }
 
 /* キラキラ演出用のCSS */
 .star-shower {
-position: absolute;
-top: -10px;
-left: 0;
-width: 100%;
-height: 100%;
-z-index: 100;
-pointer-events: none;
-overflow: hidden;
+    position: absolute;
+    top: -10px;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    pointer-events: none;
+    overflow: hidden;
 }
 .star {
-position: absolute;
-top: -10px;
-font-size: 20px;
-animation: starFall 1.2s linear forwards;
+    position: absolute;
+    top: -10px;
+    font-size: 20px;
+    animation: starFall 1.2s linear forwards;
 }
 @keyframes starFall {
-0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
-10% { transform: translateY(0px) rotate(30deg); opacity: 1; }
-80% { opacity: 1; }
-100% { transform: translateY(350px) rotate(360deg); opacity: 0; }
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+    10% { transform: translateY(0px) rotate(30deg); opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateY(350px) rotate(360deg); opacity: 0; }
 }
 
 /* 録音コンテナのコンパクトデザイン */
 .mic-container {
-background: rgba(255, 255, 255, 0.06);
-border: 2px dashed rgba(215, 196, 158, 0.5);
-padding: 6px;
-border-radius: 8px;
-text-align: center;
-margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px dashed rgba(215, 196, 158, 0.5);
+    padding: 6px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 6px;
 }
 .equalizer-wave {
-display: flex;
-justify-content: center;
-align-items: center;
-height: 18px;
-gap: 3px;
-margin: 4px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 18px;
+    gap: 3px;
+    margin: 4px 0;
 }
 .wave-bar {
-width: 4px;
-height: 100%;
-background-color: #ffd700;
-border-radius: 2px;
-animation: waveAnim 1.2s ease-in-out infinite;
+    width: 4px;
+    height: 100%;
+    background-color: #ffd700;
+    border-radius: 2px;
+    animation: waveAnim 1.2s ease-in-out infinite;
 }
 .wave-bar:nth-child(2) { animation-delay: 0.1s; background-color: #ffb700; }
 .wave-bar:nth-child(3) { animation-delay: 0.2s; background-color: #ff9900; }
 .wave-bar:nth-child(4) { animation-delay: 0.3s; background-color: #ffb700; }
 .wave-bar:nth-child(5) { animation-delay: 0.4s; background-color: #ffd700; }
 @keyframes waveAnim {
-0%, 100% { transform: scaleY(0.4); }
-50% { transform: scaleY(1.0); }
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1.0); }
 }
 
 /* 判定バッジ */
 .pronunciation-badge-container {
-margin-top: 4px;
-margin-bottom: 4px;
-background: rgba(43, 28, 17, 0.95);
-border: 1.5px solid #8b5a2b;
-border-radius: 8px;
-padding: 6px;
-display: flex;
-align-items: center;
-gap: 6px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    background: rgba(43, 28, 17, 0.95);
+    border: 1.5px solid #8b5a2b;
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 .badge-icon-perfect { font-size: 20px; color: #ffd700; }
 .badge-icon-good { font-size: 20px; color: #50c878; }
@@ -270,76 +270,76 @@ gap: 6px;
 
 /* 📱 スマートフォン表示（横幅768px以下）での極小化設定（縦スクロールを完全に排除！） */
 @media (max-width: 768px) {
-.block-container {
-padding: 0.2rem !important;
-}
-.character-stage {
-height: 160px !important; 
-margin-bottom: 3px !important;
-}
-.npc-large-img {
-max-height: 100% !important;
-bottom: 0px !important;
-}
-.drink-present {
-width: 55px !important;
-height: 55px !important;
-bottom: 3px !important;
-right: 8% !important;
-}
-.cookie-present {
-width: 45px !important;
-height: 45px !important;
-bottom: 3px !important;
-right: 22% !important;
-}
-.speech-window {
-font-size: 0.95rem !important;
-padding: 6px 10px !important;
-min-height: 45px !important;
-margin-bottom: 3px !important;
-}
-.speech-sub-jp {
-font-size: 0.72rem !important;
-margin-top: 1px !important;
-padding-top: 1px !important;
-}
-.receipt-memo {
-padding: 3px 6px !important;
-font-size: 0.65rem !important;
-margin-top: 1px !important;
-margin-bottom: 3px !important;
-}
-.receipt-header {
-font-size: 0.7rem !important;
-margin-bottom: 1px !important;
-}
-.receipt-item {
-font-size: 0.6rem !important;
-padding: 1px 3px !important;
-}
-.receipt-total {
-font-size: 0.7rem !important;
-margin-top: 1px !important;
-padding-top: 1px !important;
-}
-.mic-container {
-padding: 4px !important;
-margin-bottom: 3px !important;
-}
-.mic-container p {
-font-size: 0.75rem !important;
-margin-bottom: 1px !important;
-}
-.equalizer-wave {
-height: 12px !important;
-margin: 1px 0 !important;
-}
-.stButton button {
-padding: 3px 6px !important;
-font-size: 0.75rem !important;
-min-height: 32px !important;
-}
+    .block-container {
+        padding: 0.2rem !important;
+    }
+    .character-stage {
+        height: 160px !important; 
+        margin-bottom: 3px !important;
+    }
+    .npc-large-img {
+        max-height: 100% !important;
+        bottom: 0px !important;
+    }
+    .drink-present {
+        width: 55px !important;
+        height: 55px !important;
+        bottom: 3px !important;
+        right: 8% !important;
+    }
+    .cookie-present {
+        width: 45px !important;
+        height: 45px !important;
+        bottom: 3px !important;
+        right: 22% !important;
+    }
+    .speech-window {
+        font-size: 0.95rem !important;
+        padding: 6px 10px !important;
+        min-height: 45px !important;
+        margin-bottom: 3px !important;
+    }
+    .speech-sub-jp {
+        font-size: 0.72rem !important;
+        margin-top: 1px !important;
+        padding-top: 1px !important;
+    }
+    .receipt-memo {
+        padding: 3px 6px !important;
+        font-size: 0.65rem !important;
+        margin-top: 1px !important;
+        margin-bottom: 3px !important;
+    }
+    .receipt-header {
+        font-size: 0.7rem !important;
+        margin-bottom: 1px !important;
+    }
+    .receipt-item {
+        font-size: 0.6rem !important;
+        padding: 1px 3px !important;
+    }
+    .receipt-total {
+        font-size: 0.7rem !important;
+        margin-top: 1px !important;
+        padding-top: 1px !important;
+    }
+    .mic-container {
+        padding: 4px !important;
+        margin-bottom: 3px !important;
+    }
+    .mic-container p {
+        font-size: 0.75rem !important;
+        margin-bottom: 1px !important;
+    }
+    .equalizer-wave {
+        height: 12px !important;
+        margin: 1px 0 !important;
+    }
+    .stButton button {
+        padding: 3px 6px !important;
+        font-size: 0.75rem !important;
+        min-height: 32px !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -686,7 +686,8 @@ with main_col:
         st.balloons()
         st.success("🎉 Order Completed!")
         
-        if st.button("Play Again (もういちど遊ぶ)", key='play_again', use_container_width=True):
+        # 💡 エラー防止: ウィジェットとしてのキー 'btn_play_again' を変数 'play_again' と完全に切り分けて、二重割当ポリシー違反を完全防止！
+        if st.button("Play Again (もういちど遊ぶ)", key='btn_play_again', use_container_width=True):
             keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_cookie", "ordered_place", "ordered_payment", "has_cookie_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "play_again"]
             for key in keys_to_reset:
                 if key in st.session_state:
