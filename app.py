@@ -375,10 +375,6 @@ if "step" not in st.session_state:
     st.session_state.p_matched_keyword = ""
     st.session_state.stamp_processed = False
 
-# 安全策：何らかの理由でsold_out_itemsが存在しない場合
-if "sold_out_items" not in st.session_state:
-    st.session_state.sold_out_items = []
-
 # --- 7. サイドバー設定 ---
 st.sidebar.markdown("### 👤 カスタマー情報")
 input_name = st.sidebar.text_input("お子さまのお名前 (英語)", value=st.session_state.kid_name)
@@ -400,7 +396,6 @@ st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 # --- 8. タイトル表示 ---
 st.markdown("<p class='game-title'>☕ La Café English Roleplay ☕</p>", unsafe_allow_html=True)
 
-# 音声再生関数
 def play_audio(text, speed, voice_cfg):
     try:
         tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=(speed < 0.9))
@@ -409,7 +404,7 @@ def play_audio(text, speed, voice_cfg):
         fp.seek(0)
         b64 = base64.b64encode(fp.read()).decode()
         st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-    except Exception as e:
+    except Exception:
         pass
 
 # =========================================================
@@ -550,25 +545,31 @@ else:
         mic_input = None
         user_typed = None
 
-        # --- あいまい判定関数 (文字起こし履歴保持付き) ---
         def fuzzy_match(input_text, keyword_list, fuzzy_rules=None):
             text = input_text.lower().strip()
             matched = None
+            best_match_length = 0
             exact_hit = False
+
+            # 最長一致（Longest Match）アルゴリズムで誤爆を防止！
+            # 1. 完全キーワード一致のチェック
             for k in keyword_list:
                 if k in text:
-                    matched = k
-                    exact_hit = True
-                    break
-            if not exact_hit and fuzzy_rules:
+                    if len(k) > best_match_length:
+                        matched = k
+                        best_match_length = len(k)
+                        exact_hit = True
+
+            # 2. ファジールール一致のチェック（より長いフレーズのルールを優先）
+            if fuzzy_rules:
                 for k, mistakes in fuzzy_rules.items():
                     for mistake in mistakes:
                         if mistake in text:
-                            matched = k
-                            exact_hit = False 
-                            break
-                    if matched: break
-            
+                            if len(mistake) > best_match_length:
+                                matched = k
+                                best_match_length = len(mistake)
+                                exact_hit = False
+
             st.session_state.p_heard_text = text
             if matched:
                 st.session_state.p_matched_keyword = matched.capitalize()
@@ -578,14 +579,13 @@ else:
                 st.session_state.pronunciation_status = "failed"
             return matched
 
-        # ステップごとの模範英語フレーズ定義
-        example_phrases = {
-            1: "Tea, please. / Coffee, please.",
-            2: "Iced, please.",
-            3: "Small, please.",
-            4: "Cake, please.",
-            5: "For here, please.",
-            6: "10 dollars, please."
+        sample_phrases_map = {
+            1: ["Coffee, please.", "Latte, please.", "Tea, please."],
+            2: ["Hot, please.", "Iced, please."],
+            3: ["Small, please.", "Medium, please.", "Large, please."],
+            4: ["Cake, please.", "Sandwich, please.", "No, thank you."],
+            5: ["For here, please.", "To go, please."],
+            6: ["5 dollars, please.", "10 dollars, please.", "20 dollars, please.", "By card, please."]
         }
 
         if st.session_state.step < 7:
@@ -596,10 +596,15 @@ else:
                 st.markdown("<p style='color:#ffd700; font-weight:bold; font-size:1.1rem; margin-bottom:5px;'>🎤 Speak English (英語でこたえてね！)</p>", unsafe_allow_html=True)
                 mic_input = speech_to_text(start_prompt="🔴 PUSH TO TALK (おしてね)", stop_prompt="⏹️ STOP", language='en-US', use_container_width=True, key=f'mic_{st.session_state.step}')
                 
-                # お手本ボイス再生ボタン
-                sample_phrase = example_phrases.get(st.session_state.step, "Tea, please.")
-                if st.button(f"🔊 お手本を聞く ({sample_phrase})", key=f"btn_sample_{st.session_state.step}", use_container_width=True):
-                    play_audio(sample_phrase, voice_speed, selected_voice)
+                # すべての選択肢のお手本再生ボタン（横並びで表示）
+                phrases = sample_phrases_map.get(st.session_state.step, [])
+                if phrases:
+                    st.markdown("<p style='color:#ffffff; font-size:0.95rem; font-weight:bold; margin-top:12px; margin-bottom:6px;'>🔊 聞きたいお手本を押してね：</p>", unsafe_allow_html=True)
+                    ex_cols = st.columns(len(phrases))
+                    for idx, phrase in enumerate(phrases):
+                        with ex_cols[idx]:
+                            if st.button(f"🔊 {phrase}", key=f"btn_sample_{st.session_state.step}_{idx}", use_container_width=True):
+                                play_audio(phrase, voice_speed, selected_voice)
 
                 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -619,51 +624,54 @@ else:
             keywords = []
             fuzzy_rules = None
 
-            # --- ステップごとのメニュー表示＆価格の可視化 ---
             if st.session_state.step == 1:
                 keywords = ["coffee", "latte", "tea"]
                 fuzzy_rules = {
-                    "coffee": ["cafe", "copy", "coffe", "kaffee", "kofi"],
-                    "latte": ["lotte", "latter", "late", "ratte", "lotay", "lot", "latt"],
-                    "tea": ["tee", "ti", "key", "sea", "chee", "tai", "t", "the"]
+                    "latte": ["latte", "lotte", "latter", "late", "ratte", "lotay", "lot", "latt", "lat", "la tea", "lat tea", "lot tea", "rate"],
+                    "coffee": ["coffee", "cafe", "copy", "coffe", "kaffee", "kofi", "cofi"],
+                    "tea": ["tea", "tee", "ti", "tai", "the"]
                 }
                 
+                # HTMLを1行化して表記崩れを防止
+                coffee_sold_out = "coffee" in st.session_state.sold_out_items
+                latte_sold_out = "latte" in st.session_state.sold_out_items
+                tea_sold_out = "tea" in st.session_state.sold_out_items
+
+                coffee_badge = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if coffee_sold_out else ''
+                latte_badge = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if latte_sold_out else ''
+                tea_badge = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if tea_sold_out else ''
+
+                coffee_html = f"<div class='menu-card'>{coffee_badge}<p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p></div>"
+                latte_html = f"<div class='menu-card'>{latte_badge}<p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p></div>"
+                tea_html = f"<div class='menu-card'>{tea_badge}<p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>"
+
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
                 
                 with menu_col1:
-                    is_coffee_sold_out = "coffee" in st.session_state.sold_out_items
-                    sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_coffee_sold_out else ''
-                    coffee_html = f"<div class='menu-card'>{sold_out_html}<p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p></div>"
                     st.markdown(coffee_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
                 
                 with menu_col2:
-                    is_latte_sold_out = "latte" in st.session_state.sold_out_items
-                    sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_latte_sold_out else ''
-                    latte_html = f"<div class='menu-card'>{sold_out_html}<p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p></div>"
                     st.markdown(latte_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
                 
                 with menu_col3:
-                    is_tea_sold_out = "tea" in st.session_state.sold_out_items
-                    sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_tea_sold_out else ''
-                    tea_html = f"<div class='menu-card'>{sold_out_html}<p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>"
                     st.markdown(tea_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
 
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
-                        if st.button("☕️ Coffee, please.", key='b_cf', disabled=is_coffee_sold_out, use_container_width=True): user_choice = "coffee"
+                        if st.button("☕️ Coffee, please.", key='b_cf', disabled=coffee_sold_out, use_container_width=True): user_choice = "coffee"
                     with col2:
-                        if st.button("🥛 Latte, please.", key='b_lt', disabled=is_latte_sold_out, use_container_width=True): user_choice = "latte"
+                        if st.button("🥛 Latte, please.", key='b_lt', disabled=latte_sold_out, use_container_width=True): user_choice = "latte"
                     with col3:
-                        if st.button("🍵 Tea, please.", key='b_te', disabled=is_tea_sold_out, use_container_width=True): user_choice = "tea"
+                        if st.button("🍵 Tea, please.", key='b_te', disabled=tea_sold_out, use_container_width=True): user_choice = "tea"
 
             elif st.session_state.step == 2:
                 keywords = ["hot", "iced"]
                 fuzzy_rules = {
-                    "hot": ["hat", "pot", "heart", "hut", "haat"], 
-                    "iced": ["ice", "eyes", "ice", "icd", "aice"]
+                    "hot": ["hot", "hat", "pot", "heart", "hut", "haat"], 
+                    "iced": ["iced", "ice", "eyes", "icd", "aice"]
                 }
                 
                 temp_col1, temp_col2, temp_space = st.columns([1, 1, 1])
@@ -681,9 +689,9 @@ else:
             elif st.session_state.step == 3:
                 keywords = ["small", "medium", "large"]
                 fuzzy_rules = {
-                    "small": ["smal", "smol", "some", "suma"],
-                    "medium": ["mediam", "media", "med", "mid"],
-                    "large": ["laj", "raj", "larj", "lag"]
+                    "small": ["small", "smal", "smol", "some", "suma"],
+                    "medium": ["medium", "mediam", "media", "med", "mid"],
+                    "large": ["large", "laj", "raj", "larj", "lag"]
                 }
                 
                 size_col1, size_col2, size_col3 = st.columns(3)
@@ -705,9 +713,9 @@ else:
             elif st.session_state.step == 4:
                 keywords = ["cake", "sandwich", "no"]
                 fuzzy_rules = {
-                    "cake": ["kake", "kakee", "cak", "keiki"],
-                    "sandwich": ["sanwich", "sand", "wich", "sando"],
-                    "no": ["non", "not", "iie", "nou"]
+                    "cake": ["cake", "kake", "kakee", "cak", "keiki"],
+                    "sandwich": ["sandwich", "sanwich", "sand", "wich", "sando"],
+                    "no": ["no", "non", "not", "iie", "nou"]
                 }
                 
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
@@ -731,8 +739,8 @@ else:
             elif st.session_state.step == 5:
                 keywords = ["here", "go"]
                 fuzzy_rules = {
-                    "here": ["hear", "her", "hir", "in"],
-                    "go": ["togo", "to go", "gou", "take"]
+                    "here": ["here", "hear", "her", "hir", "in"],
+                    "go": ["go", "togo", "to go", "gou", "take"]
                 }
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
@@ -743,10 +751,10 @@ else:
             elif st.session_state.step == 6:
                 keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
                 fuzzy_rules = {
-                    "5": ["five", "faiv"],
-                    "10": ["ten", "tenn"],
-                    "20": ["twenty", "twenti"],
-                    "card": ["kad", "ked"]
+                    "5": ["5", "five", "faiv"],
+                    "10": ["10", "ten", "tenn"],
+                    "20": ["20", "twenty", "twenti"],
+                    "card": ["card", "kad", "ked"]
                 }
                 
                 pay_col1, pay_col2, pay_col3 = st.columns(3)
@@ -886,7 +894,6 @@ else:
                     st.session_state.speak_now = True
                     st.rerun()
                 else:
-                    # 聞き取り失敗時のインタラクティブフィードバック処理
                     import time
                     time.sleep(0.4)
                     st.session_state.prevent_overlap = {"step": 0, "text": ""}
