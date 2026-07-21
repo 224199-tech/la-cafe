@@ -44,16 +44,16 @@ staff_normal_base = get_image_base64(staff_normal_path)
 staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_happy_path) else staff_normal_base
 stamp_base64 = get_image_base64(stamp_img_path)
 
-bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #1e120c;"
+bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #f7f3ed;"
 
-# --- 3. デザインCSS（高コントラスト＆バッジ対応） ---
+# --- 3. デザインCSS ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
 .block-container { 
     max-width: 1200px !important;
     padding: 30px 20px !important; 
-    background-color: rgba(0, 0, 0, 0.5); 
+    background-color: rgba(255, 255, 255, 0.15); 
     border-radius: 16px;
     margin-top: 20px;
 }
@@ -591,7 +591,7 @@ else:
                 keywords = ["coffee", "latte", "tea"]
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
                 
-                # コーヒーカード (インデントバグを修正：1行に完全に統合)
+                # コーヒーカード
                 with menu_col1:
                     is_coffee_sold_out = "coffee" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_coffee_sold_out else ''
@@ -599,7 +599,7 @@ else:
                     st.markdown(coffee_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
                 
-                # ラテカード (インデントバグを修正：1行に完全に統合)
+                # ラテカード
                 with menu_col2:
                     is_latte_sold_out = "latte" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_latte_sold_out else ''
@@ -607,7 +607,7 @@ else:
                     st.markdown(latte_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
                 
-                # ティーカード (インデントバグを修正：1行に完全に統合)
+                # ティーカード
                 with menu_col3:
                     is_tea_sold_out = "tea" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_tea_sold_out else ''
@@ -617,17 +617,16 @@ else:
 
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
-                        st.button("☕️ Coffee, please.", key='b_cf', disabled=is_coffee_sold_out, use_container_width=True, on_click=lambda: exec('global user_choice; user_choice = "coffee"'))
+                        if st.button("☕️ Coffee, please.", key='b_cf', disabled=is_coffee_sold_out, use_container_width=True): user_choice = "coffee"
                     with col2:
-                        st.button("🥛 Latte, please.", key='b_lt', disabled=is_latte_sold_out, use_container_width=True, on_click=lambda: exec('global user_choice; user_choice = "latte"'))
+                        if st.button("🥛 Latte, please.", key='b_lt', disabled=is_latte_sold_out, use_container_width=True): user_choice = "latte"
                     with col3:
-                        st.button("🍵 Tea, please.", key='b_te', disabled=is_tea_sold_out, use_container_width=True, on_click=lambda: exec('global user_choice; user_choice = "tea"'))
+                        if st.button("🍵 Tea, please.", key='b_te', disabled=is_tea_sold_out, use_container_width=True): user_choice = "tea"
 
             elif st.session_state.step == 2:
                 keywords = ["hot", "iced"]
                 fuzzy_rules = {"hot": ["hat", "pot", "heart"], "iced": ["ice", "eyes"]}
                 
-                # 1行HTMLに統合して等幅バグを防止
                 temp_col1, temp_col2, temp_space = st.columns([1, 1, 1])
                 with temp_col1:
                     st.markdown("<div class='menu-card'><p class='menu-card-title'>🔥 Hot</p><p style='color:#aaa;'>+$0.00</p></div>", unsafe_allow_html=True)
@@ -643,7 +642,6 @@ else:
             elif st.session_state.step == 3:
                 keywords = ["small", "medium", "large"]
                 
-                # 1行HTMLに統合して等幅バグを防止
                 size_col1, size_col2, size_col3 = st.columns(3)
                 with size_col1:
                     st.markdown("<div class='menu-card'><p class='menu-card-title'>🟢 Small</p><p style='color:#aaa;'>+$0.00</p></div>", unsafe_allow_html=True)
@@ -663,7 +661,6 @@ else:
             elif st.session_state.step == 4:
                 keywords = ["cake", "sandwich", "no"]
                 
-                # 1行HTMLに統合して等幅バグを防止
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
                 with menu_col1:
                     st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['cake']:.2f}</p></div>", unsafe_allow_html=True)
@@ -723,15 +720,27 @@ else:
             if st.session_state.input_mode == "⌨️ Type (文字入力)" and st.session_state.step != 6:
                 user_typed = st.chat_input("Type your response in English here... (例: coffee, please)")
 
-            raw_input_text = mic_input or user_choice or user_typed
+            # 【重要】音声認識（mic_input）の重複バグを防ぐため、音声の時だけ重複防止チェックを掛けます
+            raw_input_text = None
 
             if "prevent_overlap" not in st.session_state:
                 st.session_state.prevent_overlap = {"step": 0, "text": ""}
 
-            if raw_input_text and (st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != raw_input_text):
+            if mic_input:
+                # 音声認識の時だけ、直前と全く同じ音声での連発スキップを防ぐ
+                if st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != mic_input:
+                    raw_input_text = mic_input
+                    st.session_state.prevent_overlap["step"] = st.session_state.step
+                    st.session_state.prevent_overlap["text"] = mic_input
+            elif user_choice:
+                # ボタンクリックやキーボード入力は重複防止を完全に無視して100%反応させる
+                raw_input_text = user_choice
+            elif user_typed:
+                raw_input_text = user_typed
+
+            # ユーザーの何らかの入力が確定した場合
+            if raw_input_text:
                 matched_key = fuzzy_match(raw_input_text, keywords, fuzzy_rules)
-                st.session_state.prevent_overlap["step"] = st.session_state.step
-                st.session_state.prevent_overlap["text"] = raw_input_text
 
                 if matched_key:
                     # 品切れ商品をもう一度選択してしまった場合のガード処理
@@ -746,7 +755,7 @@ else:
                     st.session_state.pronunciation_status = None 
                     
                     if st.session_state.step == 1:
-                        # 【新要素】25%の確率でその商品の「品切れイベント」が発生
+                        # 25%の確率でその商品の「品切れイベント」が発生
                         if len(st.session_state.sold_out_items) == 0 and random.random() < 0.25:
                             st.session_state.sold_out_items.append(matched_key)
                             st.session_state.current_npc_en = f"Oh, I'm sorry! We are out of {matched_key} today. Could you choose another drink, please?"
@@ -811,13 +820,13 @@ else:
                         if st.session_state.ordered_payment_type.startswith("cash"):
                             if st.session_state.change_amount > 0:
                                 st.session_state.current_npc_en = f"Thank you so much! Here is your change, ${st.session_state.change_amount:.2f}. And here is your drink{food_msg}. Enjoy!"
-                                st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文のドリンク{food_msg_jp}もどうぞ！"
+                                st.session_state.current_npc_jp = f"ありがとうございます！お釣りの${st.session_state.change_amount:.2f}です。ご注文 of ドリンク{food_msg_jp}もどうぞ！"
                             else:
                                 st.session_state.current_npc_en = f"Thank you for the exact amount! Here is your drink{food_msg}. Enjoy!"
-                                st.session_state.current_npc_jp = f"ぴったりのお支払いで助かります！ご注文のドリンク{food_msg_jp}です。どうぞ！"
+                                st.session_state.current_npc_jp = f"ぴったりのお支払いで助かります！ご注文 of ドリンク{food_msg_jp}です。どうぞ！"
                         else:
                             st.session_state.current_npc_en = f"Thank you so much! Payment approved. Here is your drink{food_msg}. Enjoy!"
-                            st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文のドリンク{food_msg_jp}になります。どうぞ！"
+                            st.session_state.current_npc_jp = f"ありがとうございました！カード決済完了です。ご注文 of ドリンク{food_msg_jp}になります。どうぞ！"
                             
                         st.session_state.emotion = "happy"
                         st.session_state.step = 7 
@@ -827,6 +836,8 @@ else:
                     import time
                     time.sleep(0.4)
                     st.session_state.pronunciation_status = None 
+                    # 聞き取りに失敗したときは、次回同じ言葉を喋っても認識できるように重複防止のキャッシュをクリア
+                    st.session_state.prevent_overlap = {"step": 0, "text": ""}
                     st.session_state.current_npc_en = "Sorry, could you say that again?"
                     st.session_state.current_npc_jp = "すみません、もう一度おっしゃっていただけますか？"
                     st.session_state.speak_now = True
