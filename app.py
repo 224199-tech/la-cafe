@@ -93,9 +93,7 @@ st.markdown("""<style>
     margin-bottom: 25px;
 }
 
-/* ==========================================
-   🚨 【重要：ラジオボタン（モード選択）の文字色強化】
-   ========================================== */
+/* ラジオボタン（モード選択）の文字色と視認性の劇的強化 */
 div[role="radiogroup"] label p {
     color: #ffffff !important;
     font-size: 1.35rem !important;
@@ -380,7 +378,15 @@ if not st.session_state.is_game_started:
     st.markdown('<p class="game-subtitle">楽しくお買い物しながら英語をおぼえよう！</p>', unsafe_allow_html=True)
     
     st.markdown('<div class="home-container">', unsafe_allow_html=True)
-    st.markdown(f'<p class="home-welcome">Welcome, {st.session_state.kid_name}! 👋<br><span style="font-size:1.2rem; color:#5c3a21; font-weight:bold;">あそびかた（入力モード）をえらんでね！</span></p>', unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <p class="home-welcome">
+        Welcome, {st.session_state.kid_name}! 👋<br><br>
+        <span style="font-size:1.4rem; color:#ffd700; font-weight:bold; text-shadow: 2px 2px 3px #000000, -2px -2px 3px #000000, 2px -2px 3px #000000, -2px 2px 3px #000000;">
+            👉 あそびかた（入力モード）をえらんでね！
+        </span>
+    </p>
+    """, unsafe_allow_html=True)
     
     selected_mode = st.radio(
         "Choose your play mode",
@@ -438,10 +444,13 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-        # 価格計算
+        # 価格定義および計算
         drink_prices = {"coffee": 4.0, "tea": 4.0, "latte": 5.0}
+        iced_additional_price = 0.50 # Iced追加料金定数
+        
         drink_p = drink_prices.get(st.session_state.ordered_drink, 0.0)
-        temp_p = 0.5 if st.session_state.drink_temp == "iced" else 0.0
+        temp_p = iced_additional_price if st.session_state.drink_temp == "iced" else 0.0
+        
         size_prices = {"small": 0.0, "medium": 1.5, "large": 3.0}
         size_p = size_prices.get(st.session_state.ordered_size, 0.0)
         food_prices = {"cake": 8.0, "sandwich": 9.5}
@@ -554,6 +563,7 @@ else:
             keywords = []
             fuzzy_rules = None
 
+            # --- ステップごとのメニュー表示＆価格の可視化 ---
             if st.session_state.step == 1:
                 keywords = ["coffee", "latte", "tea"]
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
@@ -567,7 +577,6 @@ else:
                     st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>", unsafe_allow_html=True)
                     if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
 
-                # 【2】 ボタンタップモード専用フレーズボタン
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
                         if st.button("☕️ Coffee, please.", key='b_cf', use_container_width=True): user_choice = "coffee"
@@ -577,16 +586,34 @@ else:
                         if st.button("🍵 Tea, please.", key='b_te', use_container_width=True): user_choice = "tea"
 
             elif st.session_state.step == 2:
+                # ❄️ Icedの追加料金を常時視覚化するためのメニューカード表示を追加！
                 keywords = ["hot", "iced"]
                 fuzzy_rules = {"hot": ["hat", "pot", "heart"], "iced": ["ice", "eyes"]}
+                
+                temp_col1, temp_col2, temp_space = st.columns([1, 1, 1])
+                with temp_col1:
+                    st.markdown("<div class='menu-card'><p class='menu-card-title'>🔥 Hot</p><p style='color:#aaa;'>+$0.00</p></div>", unsafe_allow_html=True)
+                with temp_col2:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>❄️ Iced</p><p style='color:#ffd700; font-weight:bold;'>+${iced_additional_price:.2f}</p></div>", unsafe_allow_html=True)
+
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
                         if st.button("🔥 Hot, please.", key='b_ht', use_container_width=True): user_choice = "hot"
                     with col2:
-                        if st.button(f"❄️ Iced, please. (+${temp_p:.2f})", key='b_ic', use_container_width=True): user_choice = "iced"
+                        if st.button(f"❄️ Iced, please. (+${iced_additional_price:.2f})", key='b_ic', use_container_width=True): user_choice = "iced"
 
             elif st.session_state.step == 3:
+                # 📏 各サイズの価格差（追加料金）を全モード共通で分かりやすくカード表示！
                 keywords = ["small", "medium", "large"]
+                
+                size_col1, size_col2, size_col3 = st.columns(3)
+                with size_col1:
+                    st.markdown("<div class='menu-card'><p class='menu-card-title'>🟢 Small</p><p style='color:#aaa;'>+$0.00</p></div>", unsafe_allow_html=True)
+                with size_col2:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🟡 Medium</p><p style='color:#ffd700; font-weight:bold;'>+${size_prices['medium']:.2f}</p></div>", unsafe_allow_html=True)
+                with size_col3:
+                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🔴 Large</p><p style='color:#ffd700; font-weight:bold;'>+${size_prices['large']:.2f}</p></div>", unsafe_allow_html=True)
+
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
                         if st.button("🟢 Small, please.", key='b_sm', use_container_width=True): user_choice = "small"
