@@ -46,7 +46,7 @@ stamp_base64 = get_image_base64(stamp_img_path)
 
 bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #1e120c;"
 
-# --- 3. デザインCSS（高コントラスト＆品切れバッジ対応） ---
+# --- 3. デザインCSS（高コントラスト＆バッジ対応） ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
@@ -261,7 +261,6 @@ div[role="radiogroup"] label p {
     text-shadow: 1px 1px 2px #000;
     margin-bottom: 5px;
 }
-/* 品切れバッジCSS */
 .sold-out-overlay {
     position: absolute;
     top: 0;
@@ -351,6 +350,9 @@ if "wallet_5" not in st.session_state:
 wallet_total = (st.session_state.wallet_5 * 5) + (st.session_state.wallet_10 * 10) + (st.session_state.wallet_20 * 20)
 
 # --- 6. ゲーム内会話状態・売り切れ状態の設定 ---
+if "sold_out_items" not in st.session_state:
+    st.session_state.sold_out_items = []
+
 if "step" not in st.session_state:
     st.session_state.step = 1
     st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
@@ -370,7 +372,6 @@ if "step" not in st.session_state:
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
     st.session_state.stamp_processed = False
-    st.session_state.sold_out_items = [] # 売り切れ商品の記録リスト
 
 # --- 7. サイドバー設定 ---
 st.sidebar.markdown("### 👤 カスタマー情報")
@@ -394,7 +395,7 @@ st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 st.markdown("<p class='game-title'>☕ La Café English Roleplay ☕</p>", unsafe_allow_html=True)
 
 # =========================================================
-# 🏠 【ホーム画面（モード選択専用：明るい配色に完全変更）】
+# 🏠 【ホーム画面（モード選択専用：明るい配色）】
 # =========================================================
 if not st.session_state.is_game_started:
     st.markdown('<p class="game-subtitle">楽しくお買い物しながら英語をおぼえよう！</p>', unsafe_allow_html=True)
@@ -590,43 +591,28 @@ else:
                 keywords = ["coffee", "latte", "tea"]
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
                 
-                # コーヒーカード
+                # コーヒーカード (インデントバグを修正：1行に完全に統合)
                 with menu_col1:
                     is_coffee_sold_out = "coffee" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_coffee_sold_out else ''
-                    st.markdown(f"""
-                    <div class='menu-card'>
-                        {sold_out_html}
-                        <p class='menu-card-title'>☕ Coffee</p>
-                        <p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    coffee_html = f"<div class='menu-card'>{sold_out_html}<p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p></div>"
+                    st.markdown(coffee_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
                 
-                # ラテカード
+                # ラテカード (インデントバグを修正：1行に完全に統合)
                 with menu_col2:
                     is_latte_sold_out = "latte" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_latte_sold_out else ''
-                    st.markdown(f"""
-                    <div class='menu-card'>
-                        {sold_out_html}
-                        <p class='menu-card-title'>🥛 Latte</p>
-                        <p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    latte_html = f"<div class='menu-card'>{sold_out_html}<p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p></div>"
+                    st.markdown(latte_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
                 
-                # ティーカード
+                # ティーカード (インデントバグを修正：1行に完全に統合)
                 with menu_col3:
                     is_tea_sold_out = "tea" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_tea_sold_out else ''
-                    st.markdown(f"""
-                    <div class='menu-card'>
-                        {sold_out_html}
-                        <p class='menu-card-title'>🍵 Tea</p>
-                        <p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    tea_html = f"<div class='menu-card'>{sold_out_html}<p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>"
+                    st.markdown(tea_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
 
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
@@ -641,6 +627,7 @@ else:
                 keywords = ["hot", "iced"]
                 fuzzy_rules = {"hot": ["hat", "pot", "heart"], "iced": ["ice", "eyes"]}
                 
+                # 1行HTMLに統合して等幅バグを防止
                 temp_col1, temp_col2, temp_space = st.columns([1, 1, 1])
                 with temp_col1:
                     st.markdown("<div class='menu-card'><p class='menu-card-title'>🔥 Hot</p><p style='color:#aaa;'>+$0.00</p></div>", unsafe_allow_html=True)
@@ -656,6 +643,7 @@ else:
             elif st.session_state.step == 3:
                 keywords = ["small", "medium", "large"]
                 
+                # 1行HTMLに統合して等幅バグを防止
                 size_col1, size_col2, size_col3 = st.columns(3)
                 with size_col1:
                     st.markdown("<div class='menu-card'><p class='menu-card-title'>🟢 Small</p><p style='color:#aaa;'>+$0.00</p></div>", unsafe_allow_html=True)
@@ -674,6 +662,8 @@ else:
 
             elif st.session_state.step == 4:
                 keywords = ["cake", "sandwich", "no"]
+                
+                # 1行HTMLに統合して等幅バグを防止
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
                 with menu_col1:
                     st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍰 Cake</p><p style='color:#ffd700; font-weight:bold;'>+${food_prices['cake']:.2f}</p></div>", unsafe_allow_html=True)
