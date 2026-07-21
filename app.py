@@ -335,9 +335,12 @@ def init_random_wallet():
     st.session_state.wallet_10 = 0
     st.session_state.wallet_20 = 0
     
-    wallet_pattern = random.choice(["only_5", "mix_10", "big_20"])
+    # 5ドル札のみ, 10ドル札のみ, 5ドル+10ドルのミックス, 20ドル札1枚 の4パターンからランダム選出
+    wallet_pattern = random.choice(["only_5", "only_10", "mix_10", "big_20"])
     if wallet_pattern == "only_5":
         st.session_state.wallet_5 = 1  
+    elif wallet_pattern == "only_10":
+        st.session_state.wallet_10 = 1
     elif wallet_pattern == "mix_10":
         st.session_state.wallet_5 = 1
         st.session_state.wallet_10 = 1 
@@ -373,6 +376,10 @@ if "step" not in st.session_state:
     st.session_state.p_matched_keyword = ""
     st.session_state.stamp_processed = False
 
+# 安全策：何らかの理由でsold_out_itemsが存在しない場合
+if "sold_out_items" not in st.session_state:
+    st.session_state.sold_out_items = []
+
 # --- 7. サイドバー設定 ---
 st.sidebar.markdown("### 👤 カスタマー情報")
 input_name = st.sidebar.text_input("お子さまのお名前 (英語)", value=st.session_state.kid_name)
@@ -393,6 +400,18 @@ st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 
 # --- 8. タイトル表示 ---
 st.markdown("<p class='game-title'>☕ La Café English Roleplay ☕</p>", unsafe_allow_html=True)
+
+# 音声再生関数
+def play_audio(text, speed, voice_cfg):
+    try:
+        tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=(speed < 0.9))
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        b64 = base64.b64encode(fp.read()).decode()
+        st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+    except Exception as e:
+        pass
 
 # =========================================================
 # 🏠 【ホーム画面（モード選択専用：明るい配色）】
@@ -523,18 +542,6 @@ else:
 
     # 左側カラム：英会話メインエリア
     with main_col:
-        def play_audio(text, speed, voice_cfg):
-            try:
-                tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=False)
-                if speed < 0.9: tts = gTTS(text=text, lang=voice_cfg["lang"], tld=voice_cfg["tld"], slow=True)
-                fp = io.BytesIO()
-                tts.write_to_fp(fp)
-                fp.seek(0)
-                b64 = base64.b64encode(fp.read()).decode()
-                st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-            except:
-                pass
-
         if st.session_state.speak_now:
             play_audio(st.session_state.current_npc_en, voice_speed, selected_voice)
             st.session_state.speak_now = False
@@ -568,6 +575,16 @@ else:
                 st.session_state.pronunciation_status = "perfect" if exact_hit else "good"
             return matched
 
+        # ステップごとの模範英語フレーズ定義
+        example_phrases = {
+            1: "Coffee, please.",
+            2: "Iced, please.",
+            3: "Small, please.",
+            4: "Cake, please.",
+            5: "For here, please.",
+            6: "10 dollars, please."
+        }
+
         if st.session_state.step < 7:
             
             # 【1】 音声入力モード専用UI
@@ -575,6 +592,12 @@ else:
                 st.markdown('<div class="mic-container">', unsafe_allow_html=True)
                 st.markdown("<p style='color:#ffd700; font-weight:bold; font-size:1.1rem; margin-bottom:5px;'>🎤 Speak English (英語でこたえてね！)</p>", unsafe_allow_html=True)
                 mic_input = speech_to_text(start_prompt="🔴 PUSH TO TALK (おしてね)", stop_prompt="⏹️ STOP", language='en-US', use_container_width=True, key=f'mic_{st.session_state.step}')
+                
+                # お手本ボイス再生ボタン
+                sample_phrase = example_phrases.get(st.session_state.step, "Coffee, please.")
+                if st.button(f"🔊 お手本を聞く ({sample_phrase})", key=f"btn_sample_{st.session_state.step}", use_container_width=True):
+                    play_audio(sample_phrase, voice_speed, selected_voice)
+
                 st.markdown('</div>', unsafe_allow_html=True)
 
             if st.session_state.pronunciation_status and st.session_state.input_mode == "🎤 Voice (音声)":
@@ -589,9 +612,14 @@ else:
             # --- ステップごとのメニュー表示＆価格の可視化 ---
             if st.session_state.step == 1:
                 keywords = ["coffee", "latte", "tea"]
+                fuzzy_rules = {
+                    "coffee": ["cafe", "copy", "coffe", "kaffee", "kofi"],
+                    "latte": ["lotte", "latter", "late", "ratte", "lotay", "lot", "latt"],
+                    "tea": ["tee", "ti", "key", "sea", "chee", "tai", "t"]
+                }
+                
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
                 
-                # コーヒーカード
                 with menu_col1:
                     is_coffee_sold_out = "coffee" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_coffee_sold_out else ''
@@ -599,7 +627,6 @@ else:
                     st.markdown(coffee_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
                 
-                # ラテカード
                 with menu_col2:
                     is_latte_sold_out = "latte" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_latte_sold_out else ''
@@ -607,7 +634,6 @@ else:
                     st.markdown(latte_html, unsafe_allow_html=True)
                     if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
                 
-                # ティーカード
                 with menu_col3:
                     is_tea_sold_out = "tea" in st.session_state.sold_out_items
                     sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_tea_sold_out else ''
@@ -625,7 +651,10 @@ else:
 
             elif st.session_state.step == 2:
                 keywords = ["hot", "iced"]
-                fuzzy_rules = {"hot": ["hat", "pot", "heart"], "iced": ["ice", "eyes"]}
+                fuzzy_rules = {
+                    "hot": ["hat", "pot", "heart", "hut", "haat"], 
+                    "iced": ["ice", "eyes", "ice", "icd", "aice"]
+                }
                 
                 temp_col1, temp_col2, temp_space = st.columns([1, 1, 1])
                 with temp_col1:
@@ -641,6 +670,11 @@ else:
 
             elif st.session_state.step == 3:
                 keywords = ["small", "medium", "large"]
+                fuzzy_rules = {
+                    "small": ["smal", "smol", "some", "suma"],
+                    "medium": ["mediam", "media", "med", "mid"],
+                    "large": ["laj", "raj", "larj", "lag"]
+                }
                 
                 size_col1, size_col2, size_col3 = st.columns(3)
                 with size_col1:
@@ -660,6 +694,11 @@ else:
 
             elif st.session_state.step == 4:
                 keywords = ["cake", "sandwich", "no"]
+                fuzzy_rules = {
+                    "cake": ["kake", "kakee", "cak", "keiki"],
+                    "sandwich": ["sanwich", "sand", "wich", "sando"],
+                    "no": ["non", "not", "iie", "nou"]
+                }
                 
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
                 with menu_col1:
@@ -681,6 +720,10 @@ else:
                     
             elif st.session_state.step == 5:
                 keywords = ["here", "go"]
+                fuzzy_rules = {
+                    "here": ["hear", "her", "hir", "in"],
+                    "go": ["togo", "to go", "gou", "take"]
+                }
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
                         if st.button("🏠 For here, please.", key='b_hr', use_container_width=True): user_choice = "here"
@@ -689,6 +732,12 @@ else:
                     
             elif st.session_state.step == 6:
                 keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
+                fuzzy_rules = {
+                    "5": ["five", "faiv"],
+                    "10": ["ten", "tenn"],
+                    "20": ["twenty", "twenti"],
+                    "card": ["kad", "ked"]
+                }
                 
                 pay_col1, pay_col2, pay_col3 = st.columns(3)
                 with pay_col1:
@@ -720,32 +769,29 @@ else:
             if st.session_state.input_mode == "⌨️ Type (文字入力)" and st.session_state.step != 6:
                 user_typed = st.chat_input("Type your response in English here... (例: coffee, please)")
 
-            # 【重要】音声認識（mic_input）の重複バグを防ぐため、音声の時だけ重複防止チェックを掛けます
+            # 重複防止処理（マイク入力時のみ適用）
             raw_input_text = None
 
             if "prevent_overlap" not in st.session_state:
                 st.session_state.prevent_overlap = {"step": 0, "text": ""}
 
             if mic_input:
-                # 音声認識の時だけ、直前と全く同じ音声での連発スキップを防ぐ
                 if st.session_state.prevent_overlap["step"] != st.session_state.step or st.session_state.prevent_overlap["text"] != mic_input:
                     raw_input_text = mic_input
                     st.session_state.prevent_overlap["step"] = st.session_state.step
                     st.session_state.prevent_overlap["text"] = mic_input
             elif user_choice:
-                # ボタンクリックやキーボード入力は重複防止を完全に無視して100%反応させる
                 raw_input_text = user_choice
             elif user_typed:
                 raw_input_text = user_typed
 
-            # ユーザーの何らかの入力が確定した場合
+            # ユーザーの入力確定時の応答処理
             if raw_input_text:
                 matched_key = fuzzy_match(raw_input_text, keywords, fuzzy_rules)
 
                 if matched_key:
-                    # 品切れ商品をもう一度選択してしまった場合のガード処理
                     if st.session_state.step == 1 and matched_key in st.session_state.sold_out_items:
-                        st.session_state.current_npc_en = f"I'm sorry, {matched_key.capitalize()} is still out of stock. Please choose something else!"
+                        st.session_state.current_npc_en = f"I'm sorry, {matched_key.capitalize()} is out of stock today. Please choose another drink!"
                         st.session_state.current_npc_jp = f"ごめんなさい、{matched_key.capitalize()}は売り切れなんです。他のお飲み物を選んでね！"
                         st.session_state.speak_now = True
                         st.rerun()
@@ -755,7 +801,6 @@ else:
                     st.session_state.pronunciation_status = None 
                     
                     if st.session_state.step == 1:
-                        # 25%の確率でその商品の「品切れイベント」が発生
                         if len(st.session_state.sold_out_items) == 0 and random.random() < 0.25:
                             st.session_state.sold_out_items.append(matched_key)
                             st.session_state.current_npc_en = f"Oh, I'm sorry! We are out of {matched_key} today. Could you choose another drink, please?"
@@ -833,13 +878,15 @@ else:
                     st.session_state.speak_now = True
                     st.rerun()
                 else:
+                    # 聞き取り失敗時のお手本再生処理
                     import time
                     time.sleep(0.4)
                     st.session_state.pronunciation_status = None 
-                    # 聞き取りに失敗したときは、次回同じ言葉を喋っても認識できるように重複防止のキャッシュをクリア
                     st.session_state.prevent_overlap = {"step": 0, "text": ""}
-                    st.session_state.current_npc_en = "Sorry, could you say that again?"
-                    st.session_state.current_npc_jp = "すみません、もう一度おっしゃっていただけますか？"
+                    
+                    target_sample = example_phrases.get(st.session_state.step, "Coffee, please.")
+                    st.session_state.current_npc_en = f"Sorry! Try saying: '{target_sample}'"
+                    st.session_state.current_npc_jp = f"すみません！お手本：『{target_sample}』と言ってみてね！"
                     st.session_state.speak_now = True
                     st.rerun()
         else:
