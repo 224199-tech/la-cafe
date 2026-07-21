@@ -44,50 +44,66 @@ staff_normal_base = get_image_base64(staff_normal_path)
 staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_happy_path) else staff_normal_base
 stamp_base64 = get_image_base64(stamp_img_path)
 
-bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #1e120c;"
+bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #f7f3ed;"
 
-# --- 3. デザインCSS ---
+# --- 3. デザインCSS（文字コントラストの劇的強化） ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
 .block-container { 
     max-width: 1200px !important;
     padding: 30px 20px !important; 
-    background-color: rgba(0, 0, 0, 0.5); 
+    background-color: rgba(0, 0, 0, 0.45); 
     border-radius: 16px;
     margin-top: 20px;
 }
+/* タイトルは見やすいゴールドとシャドウ */
 .game-title { 
     color: #ffd700; 
     text-align: center; 
     font-family: 'Comic Sans MS', sans-serif; 
     font-size: 2.8rem; 
     font-weight: bold; 
-    text-shadow: 3px 3px 6px rgba(0,0,0,0.9); 
+    text-shadow: 2px 2px 4px #000000, -2px -2px 4px #000000, 2px -2px 4px #000000, -2px 2px 4px #000000;
     margin-bottom: 10px; 
 }
 .game-subtitle {
-    color: #ffd700;
+    color: #ffffff;
     text-align: center;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
     margin-bottom: 30px;
 }
+/* ホーム画面：明るいベージュ背景に濃い茶色文字で絶対に見やすく */
 .home-container {
-    background: rgba(27, 18, 12, 0.95);
-    border: 4px solid #ffd700;
+    background: #fdfaf4;
+    border: 5px solid #8b5a2b;
     border-radius: 20px;
     padding: 40px;
     max-width: 700px;
     margin: 0 auto;
-    box-shadow: 0 12px 24px rgba(0,0,0,0.6);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.3);
     text-align: center;
 }
 .home-welcome {
-    color: #ffffff;
-    font-size: 1.6rem;
+    color: #2b1c11;
+    font-size: 1.8rem;
     font-weight: bold;
     margin-bottom: 25px;
 }
+
+/* ==========================================
+   🚨 【重要：ラジオボタン（モード選択）の文字色強化】
+   ========================================== */
+div[role="radiogroup"] label p {
+    color: #ffffff !important;
+    font-size: 1.35rem !important;
+    font-weight: bold !important;
+    text-shadow: 2px 2px 4px #000000, -1px -1px 2px #000000, 1px -1px 2px #000000, -1px 1px 2px #000000 !important;
+    opacity: 1 !important;
+}
+
 .character-stage { 
     display: flex; 
     justify-content: center; 
@@ -121,24 +137,25 @@ st.markdown("""<style>
     object-fit: contain; 
     filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5)); 
 }
+/* セリフウィンドウ：黒背景にクッキリ白文字＋黄色文字 */
 .speech-window { 
-    background: rgba(27, 18, 12, 0.95); 
-    border: 4px solid #d7c49e; 
+    background: rgba(20, 12, 8, 0.95); 
+    border: 4px solid #ffd700; 
     border-radius: 15px; 
-    padding: 20px; 
+    padding: 24px; 
     color: #ffffff; 
-    font-size: 1.6rem; 
+    font-size: 1.7rem; 
     font-weight: bold; 
-    box-shadow: 0 8px 16px rgba(0,0,0,0.5); 
+    box-shadow: 0 8px 16px rgba(0,0,0,0.6); 
     margin-bottom: 20px; 
     min-height: 100px; 
 }
 .speech-sub-jp { 
-    font-size: 1.1rem; 
-    color: #c9b097; 
-    font-weight: normal; 
-    margin-top: 10px; 
-    border-top: 1px dashed rgba(215, 196, 158, 0.4); 
+    font-size: 1.2rem; 
+    color: #ffeb3b; 
+    font-weight: bold; 
+    margin-top: 12px; 
+    border-top: 1px dashed rgba(255, 235, 59, 0.4); 
     padding-top: 8px; 
 }
 .wallet-box {
@@ -237,8 +254,8 @@ st.markdown("""<style>
     object-fit: contain;
 }
 .menu-card {
-    background: rgba(255, 255, 255, 0.08);
-    border: 2px solid #8b5a2b;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid #ffd700;
     border-radius: 10px;
     padding: 10px;
     text-align: center;
@@ -247,12 +264,13 @@ st.markdown("""<style>
 .menu-card-title {
     color: #ffd700;
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    text-shadow: 1px 1px 2px #000;
     margin-bottom: 5px;
 }
 .mic-container { 
-    background: rgba(255, 255, 255, 0.05); 
-    border: 3px dashed rgba(215, 196, 158, 0.5); 
+    background: rgba(255, 255, 255, 0.1); 
+    border: 3px dashed #ffd700; 
     padding: 15px; 
     border-radius: 12px; 
     text-align: center; 
@@ -356,13 +374,13 @@ st.sidebar.audio(bgm_url, format="audio/mp3", loop=True)
 st.markdown("<p class='game-title'>☕ La Café English Roleplay ☕</p>", unsafe_allow_html=True)
 
 # =========================================================
-# 🏠 【完全分離：ホーム画面（モード選択専用）】
+# 🏠 【ホーム画面（モード選択専用：明るい配色に完全変更）】
 # =========================================================
 if not st.session_state.is_game_started:
     st.markdown('<p class="game-subtitle">楽しくお買い物しながら英語をおぼえよう！</p>', unsafe_allow_html=True)
     
     st.markdown('<div class="home-container">', unsafe_allow_html=True)
-    st.markdown(f'<p class="home-welcome">Welcome, {st.session_state.kid_name}! 👋<br><span style="font-size:1.1rem; color:#c9b097; font-weight:normal;">あそびかた（入力モード）をえらんでね！</span></p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="home-welcome">Welcome, {st.session_state.kid_name}! 👋<br><span style="font-size:1.2rem; color:#5c3a21; font-weight:bold;">あそびかた（入力モード）をえらんでね！</span></p>', unsafe_allow_html=True)
     
     selected_mode = st.radio(
         "Choose your play mode",
@@ -389,7 +407,7 @@ if not st.session_state.is_game_started:
 else:
     main_col, visual_col = st.columns([1.2, 0.8])
 
-    # 右側カラム：ゲームビジュアル（注文が進むと連動する要素）
+    # 右側カラム：ゲームビジュアル
     with visual_col:
         active_staff_base = staff_happy_base if st.session_state.emotion == "happy" else staff_normal_base
         staff_html = f'<img class="npc-large-img" src="data:image/png;base64,{active_staff_base}">' if active_staff_base else '<div style="font-size:80px; text-align:center;">👩‍🍳</div>'
@@ -519,7 +537,6 @@ else:
             return matched
 
         if st.session_state.step < 7:
-            # 💡 選択されたモードによるUIの完全切り替え制御
             
             # 【1】 音声入力モード専用UI
             if st.session_state.input_mode == "🎤 Voice (音声)" and st.session_state.step != 6:
@@ -533,12 +550,10 @@ else:
                 color = "#00ff7f" if st.session_state.pronunciation_status == "perfect" else "#ffd700"
                 st.markdown(f"<div class='pronunciation-badge-container'><div style='color:#aaa; font-size:1.0rem;'>Heard: {st.session_state.p_heard_text} ➔ {st.session_state.p_matched_keyword}</div><div style='color:{color}; font-weight:bold; font-size:1.2rem;'>{icon}</div></div>", unsafe_allow_html=True)
 
-            # 共通カラム（ボタン配置または画像カタログ用）
             col1, col2, col3 = st.columns(3)
             keywords = []
             fuzzy_rules = None
 
-            # 各ステップに応じたメニュー・ボタン生成
             if st.session_state.step == 1:
                 keywords = ["coffee", "latte", "tea"]
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
@@ -609,7 +624,6 @@ else:
                         if st.button("🛍️ To go, please.", key='b_tg', use_container_width=True): user_choice = "go"
                     
             elif st.session_state.step == 6:
-                # お会計（お札手渡し）は全モード共通の特別演出
                 keywords = ["5", "10", "20", "five", "ten", "twenty", "card"]
                 
                 pay_col1, pay_col2, pay_col3 = st.columns(3)
@@ -642,7 +656,6 @@ else:
             if st.session_state.input_mode == "⌨️ Type (文字入力)" and st.session_state.step != 6:
                 user_typed = st.chat_input("Type your response in English here... (例: coffee, please)")
 
-            # 入力の判定処理
             raw_input_text = mic_input or user_choice or user_typed
 
             if "prevent_overlap" not in st.session_state:
@@ -737,7 +750,6 @@ else:
                     st.session_state.speak_now = True
                     st.rerun()
         else:
-            # クリア処理
             if not st.session_state.stamp_processed:
                 st.session_state.total_stamps += 1
                 st.session_state.stamp_processed = True
