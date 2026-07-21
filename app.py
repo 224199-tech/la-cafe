@@ -44,20 +44,19 @@ staff_normal_base = get_image_base64(staff_normal_path)
 staff_happy_base = get_image_base64(staff_happy_path) if os.path.exists(staff_happy_path) else staff_normal_base
 stamp_base64 = get_image_base64(stamp_img_path)
 
-bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #f7f3ed;"
+bg_style = f"background-image: url('data:image/jpeg;base64,{bg_base64}');" if bg_base64 else "background-color: #1e120c;"
 
-# --- 3. デザインCSS（文字コントラストの劇的強化） ---
+# --- 3. デザインCSS（高コントラスト＆品切れバッジ対応） ---
 st.markdown(f"<style>.stApp {{{bg_style} background-size: cover; background-position: center; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
 .block-container { 
     max-width: 1200px !important;
     padding: 30px 20px !important; 
-    background-color: rgba(0, 0, 0, 0.45); 
+    background-color: rgba(0, 0, 0, 0.5); 
     border-radius: 16px;
     margin-top: 20px;
 }
-/* タイトルは見やすいゴールドとシャドウ */
 .game-title { 
     color: #ffd700; 
     text-align: center; 
@@ -75,7 +74,6 @@ st.markdown("""<style>
     text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
     margin-bottom: 30px;
 }
-/* ホーム画面：明るいベージュ背景に濃い茶色文字で絶対に見やすく */
 .home-container {
     background: #fdfaf4;
     border: 5px solid #8b5a2b;
@@ -92,8 +90,6 @@ st.markdown("""<style>
     font-weight: bold;
     margin-bottom: 25px;
 }
-
-/* ラジオボタン（モード選択）の文字色と視認性の劇的強化 */
 div[role="radiogroup"] label p {
     color: #ffffff !important;
     font-size: 1.35rem !important;
@@ -101,7 +97,6 @@ div[role="radiogroup"] label p {
     text-shadow: 2px 2px 4px #000000, -1px -1px 2px #000000, 1px -1px 2px #000000, -1px 1px 2px #000000 !important;
     opacity: 1 !important;
 }
-
 .character-stage { 
     display: flex; 
     justify-content: center; 
@@ -135,7 +130,6 @@ div[role="radiogroup"] label p {
     object-fit: contain; 
     filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5)); 
 }
-/* セリフウィンドウ：黒背景にクッキリ白文字＋黄色文字 */
 .speech-window { 
     background: rgba(20, 12, 8, 0.95); 
     border: 4px solid #ffd700; 
@@ -258,6 +252,7 @@ div[role="radiogroup"] label p {
     padding: 10px;
     text-align: center;
     margin-bottom: 10px;
+    position: relative;
 }
 .menu-card-title {
     color: #ffd700;
@@ -265,6 +260,32 @@ div[role="radiogroup"] label p {
     font-size: 1.2rem;
     text-shadow: 1px 1px 2px #000;
     margin-bottom: 5px;
+}
+/* 品切れバッジCSS */
+.sold-out-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+.sold-out-badge {
+    background-color: #ff4d4d;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 2px solid white;
+    transform: rotate(-10deg);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 .mic-container { 
     background: rgba(255, 255, 255, 0.1); 
@@ -329,7 +350,7 @@ if "wallet_5" not in st.session_state:
 
 wallet_total = (st.session_state.wallet_5 * 5) + (st.session_state.wallet_10 * 10) + (st.session_state.wallet_20 * 20)
 
-# --- 6. ゲーム内会話状態の設定 ---
+# --- 6. ゲーム内会話状態・売り切れ状態の設定 ---
 if "step" not in st.session_state:
     st.session_state.step = 1
     st.session_state.current_npc_en = "Hello! Welcome to our cafe! What can I get for you today?"
@@ -349,6 +370,7 @@ if "step" not in st.session_state:
     st.session_state.p_heard_text = ""
     st.session_state.p_matched_keyword = ""
     st.session_state.stamp_processed = False
+    st.session_state.sold_out_items = [] # 売り切れ商品の記録リスト
 
 # --- 7. サイドバー設定 ---
 st.sidebar.markdown("### 👤 カスタマー情報")
@@ -567,26 +589,55 @@ else:
             if st.session_state.step == 1:
                 keywords = ["coffee", "latte", "tea"]
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
+                
+                # コーヒーカード
                 with menu_col1:
-                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>☕ Coffee</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p></div>", unsafe_allow_html=True)
+                    is_coffee_sold_out = "coffee" in st.session_state.sold_out_items
+                    sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_coffee_sold_out else ''
+                    st.markdown(f"""
+                    <div class='menu-card'>
+                        {sold_out_html}
+                        <p class='menu-card-title'>☕ Coffee</p>
+                        <p style='color:#ffd700; font-weight:bold;'>${drink_prices['coffee']:.2f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                     if os.path.exists(item_images["coffee"]): st.image(item_images["coffee"], use_container_width=True)
+                
+                # ラテカード
                 with menu_col2:
-                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🥛 Latte</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p></div>", unsafe_allow_html=True)
+                    is_latte_sold_out = "latte" in st.session_state.sold_out_items
+                    sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_latte_sold_out else ''
+                    st.markdown(f"""
+                    <div class='menu-card'>
+                        {sold_out_html}
+                        <p class='menu-card-title'>🥛 Latte</p>
+                        <p style='color:#ffd700; font-weight:bold;'>${drink_prices['latte']:.2f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                     if os.path.exists(item_images["latte"]): st.image(item_images["latte"], use_container_width=True)
+                
+                # ティーカード
                 with menu_col3:
-                    st.markdown(f"<div class='menu-card'><p class='menu-card-title'>🍵 Tea</p><p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p></div>", unsafe_allow_html=True)
+                    is_tea_sold_out = "tea" in st.session_state.sold_out_items
+                    sold_out_html = '<div class="sold-out-overlay"><div class="sold-out-badge">SOLD OUT (うりきれ)</div></div>' if is_tea_sold_out else ''
+                    st.markdown(f"""
+                    <div class='menu-card'>
+                        {sold_out_html}
+                        <p class='menu-card-title'>🍵 Tea</p>
+                        <p style='color:#ffd700; font-weight:bold;'>${drink_prices['tea']:.2f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                     if os.path.exists(item_images["tea"]): st.image(item_images["tea"], use_container_width=True)
 
                 if st.session_state.input_mode == "👇 Button (ボタンタップ)":
                     with col1:
-                        if st.button("☕️ Coffee, please.", key='b_cf', use_container_width=True): user_choice = "coffee"
+                        st.button("☕️ Coffee, please.", key='b_cf', disabled=is_coffee_sold_out, use_container_width=True, on_click=lambda: exec('global user_choice; user_choice = "coffee"'))
                     with col2:
-                        if st.button("🥛 Latte, please.", key='b_lt', use_container_width=True): user_choice = "latte"
+                        st.button("🥛 Latte, please.", key='b_lt', disabled=is_latte_sold_out, use_container_width=True, on_click=lambda: exec('global user_choice; user_choice = "latte"'))
                     with col3:
-                        if st.button("🍵 Tea, please.", key='b_te', use_container_width=True): user_choice = "tea"
+                        st.button("🍵 Tea, please.", key='b_te', disabled=is_tea_sold_out, use_container_width=True, on_click=lambda: exec('global user_choice; user_choice = "tea"'))
 
             elif st.session_state.step == 2:
-                # ❄️ Icedの追加料金を常時視覚化するためのメニューカード表示を追加！
                 keywords = ["hot", "iced"]
                 fuzzy_rules = {"hot": ["hat", "pot", "heart"], "iced": ["ice", "eyes"]}
                 
@@ -603,7 +654,6 @@ else:
                         if st.button(f"❄️ Iced, please. (+${iced_additional_price:.2f})", key='b_ic', use_container_width=True): user_choice = "iced"
 
             elif st.session_state.step == 3:
-                # 📏 各サイズの価格差（追加料金）を全モード共通で分かりやすくカード表示！
                 keywords = ["small", "medium", "large"]
                 
                 size_col1, size_col2, size_col3 = st.columns(3)
@@ -694,16 +744,31 @@ else:
                 st.session_state.prevent_overlap["text"] = raw_input_text
 
                 if matched_key:
+                    # 品切れ商品をもう一度選択してしまった場合のガード処理
+                    if st.session_state.step == 1 and matched_key in st.session_state.sold_out_items:
+                        st.session_state.current_npc_en = f"I'm sorry, {matched_key.capitalize()} is still out of stock. Please choose something else!"
+                        st.session_state.current_npc_jp = f"ごめんなさい、{matched_key.capitalize()}は売り切れなんです。他のお飲み物を選んでね！"
+                        st.session_state.speak_now = True
+                        st.rerun()
+
                     import time
                     time.sleep(0.4)
                     st.session_state.pronunciation_status = None 
                     
                     if st.session_state.step == 1:
-                        st.session_state.ordered_drink = matched_key
-                        st.session_state.current_npc_en = "Excellent choice! Hot or iced? How would you like your drink?"
-                        st.session_state.current_npc_jp = "いいですね！ホット（hot）か、アイス（iced）どちらにしますか？"
-                        st.session_state.emotion = "happy"
-                        st.session_state.step = 2
+                        # 【新要素】25%の確率でその商品の「品切れイベント」が発生
+                        if len(st.session_state.sold_out_items) == 0 and random.random() < 0.25:
+                            st.session_state.sold_out_items.append(matched_key)
+                            st.session_state.current_npc_en = f"Oh, I'm sorry! We are out of {matched_key} today. Could you choose another drink, please?"
+                            st.session_state.current_npc_jp = f"ごめんなさい！今日は{matched_key}が売り切れなんです。他のお飲み物にいたしますか？"
+                            st.session_state.speak_now = True
+                            st.rerun()
+                        else:
+                            st.session_state.ordered_drink = matched_key
+                            st.session_state.current_npc_en = "Excellent choice! Hot or iced? How would you like your drink?"
+                            st.session_state.current_npc_jp = "いいですね！ホット（hot）か、アイス（iced）どちらにしますか？"
+                            st.session_state.emotion = "happy"
+                            st.session_state.step = 2
                     elif st.session_state.step == 2:
                         st.session_state.drink_temp = matched_key
                         st.session_state.current_npc_en = f"Got it, {matched_key.capitalize()}! Now, what size would you like? Small, medium, or large?"
@@ -794,7 +859,7 @@ else:
                 st.markdown(f"""<div class='award-card' style='border-color:#cd7f32;'><div class='award-title' style='color:#b5733d;'>🥈 BRONZE CUSTOMER 🥈</div><div class='award-name'>Member: {st.session_state.kid_name}</div><div class='award-badge'>🥈🥉✨</div><p>素晴らしい！ブロンズ会員証獲得！</p></div>""", unsafe_allow_html=True)
 
             if st.button("🔄 Play Again (ホーム画面にもどる)", key='b_again', use_container_width=True):
-                keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_food", "ordered_place", "ordered_payment_type", "paid_amount", "change_amount", "has_food_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed", "is_game_started"]
+                keys_to_reset = ["step", "emotion", "ordered_drink", "drink_temp", "ordered_size", "ordered_food", "ordered_place", "ordered_payment_type", "paid_amount", "change_amount", "has_food_event", "pronunciation_status", "p_heard_text", "p_matched_keyword", "prevent_overlap", "speak_now", "stamp_processed", "is_game_started", "sold_out_items"]
                 for key in keys_to_reset:
                     if key in st.session_state:
                         del st.session_state[key]
