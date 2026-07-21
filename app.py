@@ -299,7 +299,7 @@ div[role="radiogroup"] label p {
     background: #110905; 
     border: 2px solid #8b5a2b; 
     border-radius: 8px; 
-    padding: 8px 15px; 
+    padding: 10px 15px; 
     display: flex; 
     align-items: center; 
     justify-content: space-between;
@@ -335,7 +335,6 @@ def init_random_wallet():
     st.session_state.wallet_10 = 0
     st.session_state.wallet_20 = 0
     
-    # 5ドル札のみ, 10ドル札のみ, 5ドル+10ドルのミックス, 20ドル札1枚 の4パターンからランダム選出
     wallet_pattern = random.choice(["only_5", "only_10", "mix_10", "big_20"])
     if wallet_pattern == "only_5":
         st.session_state.wallet_5 = 1  
@@ -414,7 +413,7 @@ def play_audio(text, speed, voice_cfg):
         pass
 
 # =========================================================
-# 🏠 【ホーム画面（モード選択専用：明るい配色）】
+# 🏠 【ホーム画面（モード選択専用）】
 # =========================================================
 if not st.session_state.is_game_started:
     st.markdown('<p class="game-subtitle">楽しくお買い物しながら英語をおぼえよう！</p>', unsafe_allow_html=True)
@@ -441,7 +440,6 @@ if not st.session_state.is_game_started:
     
     st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
     
-    # スタートボタン
     if st.button("🚀 店内にはいる (Start Game)", use_container_width=True):
         st.session_state.is_game_started = True
         st.session_state.speak_now = True
@@ -488,7 +486,7 @@ else:
 
         # 価格定義および計算
         drink_prices = {"coffee": 4.0, "tea": 4.0, "latte": 5.0}
-        iced_additional_price = 0.50 # Iced追加料金定数
+        iced_additional_price = 0.50 
         
         drink_p = drink_prices.get(st.session_state.ordered_drink, 0.0)
         temp_p = iced_additional_price if st.session_state.drink_temp == "iced" else 0.0
@@ -552,8 +550,9 @@ else:
         mic_input = None
         user_typed = None
 
+        # --- あいまい判定関数 (文字起こし履歴保持付き) ---
         def fuzzy_match(input_text, keyword_list, fuzzy_rules=None):
-            text = input_text.lower()
+            text = input_text.lower().strip()
             matched = None
             exact_hit = False
             for k in keyword_list:
@@ -569,15 +568,19 @@ else:
                             exact_hit = False 
                             break
                     if matched: break
+            
+            st.session_state.p_heard_text = text
             if matched:
-                st.session_state.p_heard_text = f'"{text}"'
-                st.session_state.p_matched_keyword = f'"{matched.capitalize()}"'
+                st.session_state.p_matched_keyword = matched.capitalize()
                 st.session_state.pronunciation_status = "perfect" if exact_hit else "good"
+            else:
+                st.session_state.p_matched_keyword = ""
+                st.session_state.pronunciation_status = "failed"
             return matched
 
         # ステップごとの模範英語フレーズ定義
         example_phrases = {
-            1: "Coffee, please.",
+            1: "Tea, please. / Coffee, please.",
             2: "Iced, please.",
             3: "Small, please.",
             4: "Cake, please.",
@@ -594,16 +597,23 @@ else:
                 mic_input = speech_to_text(start_prompt="🔴 PUSH TO TALK (おしてね)", stop_prompt="⏹️ STOP", language='en-US', use_container_width=True, key=f'mic_{st.session_state.step}')
                 
                 # お手本ボイス再生ボタン
-                sample_phrase = example_phrases.get(st.session_state.step, "Coffee, please.")
+                sample_phrase = example_phrases.get(st.session_state.step, "Tea, please.")
                 if st.button(f"🔊 お手本を聞く ({sample_phrase})", key=f"btn_sample_{st.session_state.step}", use_container_width=True):
                     play_audio(sample_phrase, voice_speed, selected_voice)
 
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            if st.session_state.pronunciation_status and st.session_state.input_mode == "🎤 Voice (音声)":
-                icon = "🌟 Perfect!!" if st.session_state.pronunciation_status == "perfect" else "👍 Good Job!"
-                color = "#00ff7f" if st.session_state.pronunciation_status == "perfect" else "#ffd700"
-                st.markdown(f"<div class='pronunciation-badge-container'><div style='color:#aaa; font-size:1.0rem;'>Heard: {st.session_state.p_heard_text} ➔ {st.session_state.p_matched_keyword}</div><div style='color:{color}; font-weight:bold; font-size:1.2rem;'>{icon}</div></div>", unsafe_allow_html=True)
+            # 🎙️ 文字起こし＆発音判定結果表示バナー（成功・失敗どちらも表示）
+            if st.session_state.p_heard_text and st.session_state.input_mode == "🎤 Voice (音声)":
+                heard_val = st.session_state.p_heard_text
+                status = st.session_state.pronunciation_status
+                if status in ["perfect", "good"]:
+                    icon = "🌟 Perfect!!" if status == "perfect" else "👍 Good Job!"
+                    color = "#00ff7f" if status == "perfect" else "#ffd700"
+                    matched_val = st.session_state.p_matched_keyword
+                    st.markdown(f"<div class='pronunciation-badge-container'><div style='color:#aaa; font-size:1.0rem;'>🎙️ 認識された声: <b style='color:#fff;'>\"{heard_val}\"</b> ➔ <b style='color:#ffd700;'>{matched_val}</b></div><div style='color:{color}; font-weight:bold; font-size:1.2rem;'>{icon}</div></div>", unsafe_allow_html=True)
+                elif status == "failed":
+                    st.markdown(f"<div class='pronunciation-badge-container' style='border-color:#ff4d4d;'><div style='color:#aaa; font-size:1.0rem;'>🎙️ 認識された声: <b style='color:#ff8888;'>\"{heard_val}\"</b> (メニューに一致しませんでした)</div><div style='color:#ff4d4d; font-weight:bold; font-size:1.1rem;'>❓ Try Again</div></div>", unsafe_allow_html=True)
 
             col1, col2, col3 = st.columns(3)
             keywords = []
@@ -615,7 +625,7 @@ else:
                 fuzzy_rules = {
                     "coffee": ["cafe", "copy", "coffe", "kaffee", "kofi"],
                     "latte": ["lotte", "latter", "late", "ratte", "lotay", "lot", "latt"],
-                    "tea": ["tee", "ti", "key", "sea", "chee", "tai", "t"]
+                    "tea": ["tee", "ti", "key", "sea", "chee", "tai", "t", "the"]
                 }
                 
                 menu_col1, menu_col2, menu_col3 = st.columns(3)
@@ -767,9 +777,8 @@ else:
 
             # 【3】 文字入力モード専用UI
             if st.session_state.input_mode == "⌨️ Type (文字入力)" and st.session_state.step != 6:
-                user_typed = st.chat_input("Type your response in English here... (例: coffee, please)")
+                user_typed = st.chat_input("Type your response in English here... (例: tea, please)")
 
-            # 重複防止処理（マイク入力時のみ適用）
             raw_input_text = None
 
             if "prevent_overlap" not in st.session_state:
@@ -798,7 +807,6 @@ else:
 
                     import time
                     time.sleep(0.4)
-                    st.session_state.pronunciation_status = None 
                     
                     if st.session_state.step == 1:
                         if len(st.session_state.sold_out_items) == 0 and random.random() < 0.25:
@@ -878,15 +886,25 @@ else:
                     st.session_state.speak_now = True
                     st.rerun()
                 else:
-                    # 聞き取り失敗時のお手本再生処理
+                    # 聞き取り失敗時のインタラクティブフィードバック処理
                     import time
                     time.sleep(0.4)
-                    st.session_state.pronunciation_status = None 
                     st.session_state.prevent_overlap = {"step": 0, "text": ""}
                     
-                    target_sample = example_phrases.get(st.session_state.step, "Coffee, please.")
-                    st.session_state.current_npc_en = f"Sorry! Try saying: '{target_sample}'"
-                    st.session_state.current_npc_jp = f"すみません！お手本：『{target_sample}』と言ってみてね！"
+                    heard_text = st.session_state.p_heard_text or raw_input_text
+                    
+                    step_options = {
+                        1: "'Tea, please', 'Coffee, please', or 'Latte, please'",
+                        2: "'Hot, please' or 'Iced, please'",
+                        3: "'Small, please', 'Medium, please', or 'Large, please'",
+                        4: "'Cake, please', 'Sandwich, please', or 'No, thank you'",
+                        5: "'For here, please' or 'To go, please'",
+                        6: "'10 dollars, please' or 'By card, please'"
+                    }
+                    target_sample = step_options.get(st.session_state.step, "'Tea, please' or 'Coffee, please'")
+                    
+                    st.session_state.current_npc_en = f"I heard '{heard_text}'. Try saying: {target_sample}!"
+                    st.session_state.current_npc_jp = f"「{heard_text}」と聞こえました！もう一度【{target_sample}】のように言ってみてね！"
                     st.session_state.speak_now = True
                     st.rerun()
         else:
